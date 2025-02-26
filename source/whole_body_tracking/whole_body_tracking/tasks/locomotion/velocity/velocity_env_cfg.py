@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import math
 from dataclasses import MISSING
+import math
 
-import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg
 from isaaclab.managers import EventTermCfg as EventTerm
@@ -14,16 +13,15 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sensors import ContactSensorCfg
+import isaaclab.sim as sim_utils
 from isaaclab.terrains import TerrainImporterCfg
-from isaaclab.utils import configclass
-from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
-
-import whole_body_tracking.tasks.locomotion.velocity.mdp as mdp
-
 ##
 # Pre-defined configs
 ##
 from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG  # isort: skip
+from isaaclab.utils import configclass
+from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
+import whole_body_tracking.tasks.locomotion.velocity.mdp as mdp
 
 
 ##
@@ -147,7 +145,7 @@ class EventCfg:
         func=mdp.randomize_rigid_body_mass,
         mode="startup",
         params={
-            "asset_cfg": SceneEntityCfg("robot", body_names="waist_yaw_link"),
+            "asset_cfg": SceneEntityCfg("robot", body_names="torso"),
             "mass_distribution_params": (-5.0, 5.0),
             "operation": "add",
         },
@@ -218,7 +216,7 @@ class RewardsCfg:
         func=mdp.feet_air_time,
         weight=0.125,
         params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_ankle_roll_link"),
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
             "command_name": "base_velocity",
             "threshold": 0.5,
         },
@@ -233,7 +231,8 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="waist_yaw_link"), "threshold": 1.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=["torso", "pelvis", "head"]),
+                "threshold": 1.0},
     )
 
 
