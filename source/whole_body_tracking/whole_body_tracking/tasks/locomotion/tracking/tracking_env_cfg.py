@@ -218,11 +218,14 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    root_height = DoneTerm(
-        func=mdp.root_height_below_minimum,
-        params={"minimum_height": 0.4},
+    ref_pos = DoneTerm(
+        func=mdp.bad_ref_pos,
+        params={"command_name": "motion", "threshold": 0.5},
     )
-    # TODO: termination if ref error is too high
+    ref_ori = DoneTerm(
+        func=mdp.bad_ref_ori,
+        params={"asset_cfg": SceneEntityCfg("robot"), "command_name": "motion", "threshold": 0.8},
+    )
 
 @configclass
 class CurriculumCfg:
@@ -256,7 +259,7 @@ class TrackingEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 4
-        self.episode_length_s = 10.0
+        self.episode_length_s = 20.0
         # simulation settings
         self.sim.dt = 0.005
         self.sim.render_interval = self.decimation
