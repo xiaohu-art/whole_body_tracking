@@ -186,8 +186,8 @@ class RewardsCfg:
     termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
     motion_ref_pos_error_tanh = RewTerm(
         func=mdp.motion_ref_position_error_tanh,
-        weight=1.0,
-        params={"std": 0.1, "command_name": "motion"},
+        weight=2.0,
+        params={"std": 0.5, "command_name": "motion"},
     )
     motion_ref_ori_error = RewTerm(
         func=mdp.motion_ref_orientation_error,
@@ -216,12 +216,11 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    base_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=["torso", "pelvis", "head"]),
-                "threshold": 1.0},
+    root_height = DoneTerm(
+        func=mdp.root_height_below_minimum,
+        params={"minimum_height": 0.4},
     )
-
+    # TODO: termination if ref error is too high
 
 @configclass
 class CurriculumCfg:
