@@ -30,3 +30,4 @@ class HumanoidFlatEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.scene.terrain.terrain_generator = None
 
         self.rewards.dof_torques_l2 = None
+        self.rewards.action_rate_l2.weight = -1e-3

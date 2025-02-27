@@ -229,12 +229,10 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    base_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=["torso", "pelvis", "head"]),
-                "threshold": 1.0},
+    root_height = DoneTerm(
+        func=mdp.root_height_below_minimum,
+        params={"minimum_height": 0.4},
     )
-
 
 @configclass
 class CurriculumCfg:
