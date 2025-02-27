@@ -183,11 +183,10 @@ class EventCfg:
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
-    termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
     motion_ref_pos_error_tanh = RewTerm(
         func=mdp.motion_ref_position_error_tanh,
-        weight=2.0,
-        params={"std": 0.5, "command_name": "motion"},
+        weight=1.0,
+        params={"std": 0.3, "command_name": "motion"},
     )
     motion_ref_ori_error = RewTerm(
         func=mdp.motion_ref_orientation_error,
@@ -209,6 +208,9 @@ class RewardsCfg:
         weight=-1e-3,
         params={"command_name": "motion"},
     )
+
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
+    termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
 
 
 @configclass
