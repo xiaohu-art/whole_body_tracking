@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from typing import Optional, TYPE_CHECKING
+
 import torch
-from typing import TYPE_CHECKING
 
-from isaaclab.utils.math import subtract_frame_transforms, quat_error_magnitude, quat_mul
-
+from isaaclab.utils.math import quat_error_magnitude, subtract_frame_transforms
 from whole_body_tracking.tasks.locomotion.tracking.mdp.commands import MotionCommand
 
 if TYPE_CHECKING:
@@ -27,7 +27,8 @@ def motion_ref_orientation_error(env: ManagerBasedRLEnv, command_name: str) -> t
     return quat_error_magnitude(command.motion_ref_pose_w[:, 3:7], command.robot_ref_pose_w[:, 3:7])
 
 
-def motion_body_position_error(env: ManagerBasedRLEnv, command_name: str, body_names: list[str] | None) -> torch.Tensor:
+def motion_body_position_error(env: ManagerBasedRLEnv, command_name: str,
+                               body_names: list[str] | None) -> torch.Tensor:  # TODO doesn't work
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     if body_names is None:
@@ -46,13 +47,13 @@ def motion_body_position_error(env: ManagerBasedRLEnv, command_name: str, body_n
 
 
 def motion_body_position_error_tanh(
-        env: ManagerBasedRLEnv, std: float, command_name: str, body_names: list[str] | None
+        env: ManagerBasedRLEnv, std: float, command_name: str, body_names: Optional[list[str]] = None
 ) -> torch.Tensor:
     return 1 - torch.tanh(motion_body_position_error(env, command_name, body_names) / std)
 
 
 def motion_body_orientation_error(env: ManagerBasedRLEnv, command_name: str,
-                                  body_names: list[str] | None) -> torch.Tensor:
+                                  body_names: Optional[list[str]] = None) -> torch.Tensor:  # TODO doesn't work
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     if body_names is None:
