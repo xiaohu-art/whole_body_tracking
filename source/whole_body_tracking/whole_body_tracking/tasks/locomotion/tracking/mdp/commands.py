@@ -143,33 +143,45 @@ class MotionCommand(CommandTerm):
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
-            if not hasattr(self, "current_pose_visualizers"):
-                self.current_pose_visualizers = []
-                self.goal_pose_visualizers = []
+            if not hasattr(self, "current_ref_visualizer"):
+                self.current_ref_visualizer = VisualizationMarkers(
+                    self.cfg.ref_visualizer_cfg.replace(prim_path="/Visuals/Command/current/ref"))
+                self.goal_ref_visualizer = VisualizationMarkers(
+                    self.cfg.ref_visualizer_cfg.replace(prim_path="/Visuals/Command/goal/ref"))
+
+                self.current_body_visualizers = []
+                self.goal_body_visualizers = []
                 for name in self.cfg.body_names:
-                    self.current_pose_visualizers.append(
-                        VisualizationMarkers(
-                            self.cfg.pose_visualizer_cfg.replace(
-                                prim_path="/Visuals/Command/" + name + "_current_pose")))
-                    self.goal_pose_visualizers.append(VisualizationMarkers(self.cfg.pose_visualizer_cfg.replace(
-                        prim_path="/Visuals/Command/" + name + "_goal_pose")))
+                    self.current_body_visualizers.append(VisualizationMarkers(self.cfg.body_visualizer_cfg.replace(
+                        prim_path="/Visuals/Command/current/" + name)))
+                    self.goal_body_visualizers.append(VisualizationMarkers(self.cfg.body_visualizer_cfg.replace(
+                        prim_path="/Visuals/Command/goal/" + name)))
+
+            self.current_ref_visualizer.set_visibility(True)
+            self.goal_ref_visualizer.set_visibility(True)
             for i in range(len(self.cfg.body_names)):
-                self.current_pose_visualizers[i].set_visibility(True)
-                self.goal_pose_visualizers[i].set_visibility(True)
+                self.current_body_visualizers[i].set_visibility(True)
+                self.goal_body_visualizers[i].set_visibility(True)
+
         else:
+            self.current_ref_visualizer.set_visibility(False)
+            self.goal_ref_visualizer.set_visibility(False)
             for i in range(len(self.cfg.body_names)):
-                self.current_pose_visualizers[i].set_visibility(False)
-                self.goal_pose_visualizers[i].set_visibility(False)
+                self.current_body_visualizers[i].set_visibility(False)
+                self.goal_body_visualizers[i].set_visibility(False)
 
     def _debug_vis_callback(self, event):
         if not self.robot.is_initialized:
             return
 
+        self.current_ref_visualizer.visualize(self.robot_ref_pose_w[:, :3], self.robot_ref_pose_w[:, 3:7])
+        self.goal_ref_visualizer.visualize(self.motion_ref_pose_w[:, :3], self.motion_ref_pose_w[:, 3:7])
+
         for i in range(len(self.cfg.body_names)):
-            self.goal_pose_visualizers[i].visualize(self.motion_body_pose_w[:, i, :3],
-                                                    self.motion_body_pose_w[:, i, 3:7])
-            self.current_pose_visualizers[i].visualize(self.robot_body_pose_w[:, i, :3],
+            self.current_body_visualizers[i].visualize(self.robot_body_pose_w[:, i, :3],
                                                        self.robot_body_pose_w[:, i, 3:7])
+            self.goal_body_visualizers[i].visualize(self.motion_body_pose_w[:, i, :3],
+                                                    self.motion_body_pose_w[:, i, 3:7])
 
 
 @configclass
@@ -184,5 +196,8 @@ class MotionCommandCfg(CommandTermCfg):
     joint_names: list[str] = MISSING
     body_names: list[str] = MISSING
 
-    pose_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
-    pose_visualizer_cfg.markers["frame"].scale = (0.1, 0.1, 0.1)
+    ref_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
+    ref_visualizer_cfg.markers["frame"].scale = (0.2, 0.2, 0.2)
+
+    body_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
+    body_visualizer_cfg.markers["frame"].scale = (0.1, 0.1, 0.1)
