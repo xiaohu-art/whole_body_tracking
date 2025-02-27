@@ -33,7 +33,7 @@ class HumanoidFlatEnvCfg(TrackingEnvCfg):
                                             'right_hip_z', 'right_knee', 'right_ankle_x', 'right_ankle_y',
                                             'right_ankle_z', 'left_hip_x', 'left_hip_y', 'left_hip_z',
                                             'left_knee', 'left_ankle_x', 'left_ankle_y', 'left_ankle_z']
-        self.commands.motion.body_names = ["torso", "right_hand", "left_hand", "right_foot", "left_foot"]
+        self.commands.motion.body_names = ["right_hand", "left_hand", "right_foot", "left_foot"]
 
 @configclass
 class HumanoidFlatDanceEnvCfg(HumanoidFlatEnvCfg):
