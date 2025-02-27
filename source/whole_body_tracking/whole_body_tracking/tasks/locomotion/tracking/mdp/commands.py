@@ -54,8 +54,20 @@ class MotionCommand(CommandTerm):
         self.metrics["error_body_rot"] = torch.zeros(self.num_envs, device=self.device)
 
     @property
-    def command(self) -> torch.Tensor:
-        return torch.zeros(self.num_envs, 0, device=self.device)
+    def command(self) -> torch.Tensor:  # TODO Consider again if this is the best observation
+        motion_ref_pose = self.motion_ref_pose_w
+        motion_ref_pose[:, :3] -= self.robot_ref_pose_w[:, :3]
+        motion_body_pose = self.motion_body_pose_w
+        motion_body_pose[:, :, :3] -= self.robot_ref_pose_w[:, None, :3]
+
+        return torch.cat([
+            motion_ref_pose,
+            self.motion_ref_vel_w,
+            motion_ref_pose.view(self.num_envs, -1),
+            self.motion_body_vel_w.view(self.num_envs, -1),
+            self.motion_joint_pos,
+            self.motion_joint_vel,
+        ], dim=1)
 
     @property
     def robot_ref_pose_w(self) -> torch.Tensor:
