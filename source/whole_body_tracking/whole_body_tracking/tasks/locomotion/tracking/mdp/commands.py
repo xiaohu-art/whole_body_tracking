@@ -55,9 +55,9 @@ class MotionCommand(CommandTerm):
 
     @property
     def command(self) -> torch.Tensor:  # TODO Consider again if this is the best observation
-        motion_ref_pose = self.motion_ref_pose_w
+        motion_ref_pose = self.motion_ref_pose_w.clone()
         motion_ref_pose[:, :3] -= self.robot_ref_pose_w[:, :3]
-        motion_body_pose = self.motion_body_pose_w
+        motion_body_pose = self.motion_body_pose_w.clone()
         motion_body_pose[:, :, :3] -= self.robot_ref_pose_w[:, None, :3]
 
         return torch.cat([
@@ -148,7 +148,7 @@ class MotionCommand(CommandTerm):
         self.motion_body_pose_w[:, :, 3:7] = body_rot[:, self.motion_body_indexes]
         self.motion_body_vel_w[:, :, :3] = body_lin_vel[:, self.motion_body_indexes]
         self.motion_body_vel_w[:, :, 3:] = body_ang_vel[:, self.motion_body_indexes]
-        self.motion_body_pose_w[:, :, :2] += self.motion_offset_pos[:, None, :]
+        self.motion_body_pose_w[:, :, :2] += self.motion_offset_pos[:, None, :2]
 
         self.motion_joint_pos = joint_pos[:, self.motion_joint_indexes]
         self.motion_joint_vel = joint_vel[:, self.motion_joint_indexes]
