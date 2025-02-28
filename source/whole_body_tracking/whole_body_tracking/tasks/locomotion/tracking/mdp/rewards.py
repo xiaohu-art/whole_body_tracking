@@ -17,8 +17,8 @@ def motion_ref_position_error(env: ManagerBasedRLEnv, command_name: str) -> torc
     return torch.norm(command.motion_ref_pose_w[:, :3] - command.robot_ref_pose_w[:, :3], dim=1)
 
 
-def motion_ref_position_error_tanh(env: ManagerBasedRLEnv, std: float, command_name: str) -> torch.Tensor:
-    return 1 - torch.tanh(motion_ref_position_error(env, command_name) / std)
+def motion_ref_position_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
+    return torch.exp(-motion_ref_position_error(env, command_name) / std)
 
 
 def motion_ref_orientation_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
@@ -26,6 +26,17 @@ def motion_ref_orientation_error(env: ManagerBasedRLEnv, command_name: str) -> t
 
     return quat_error_magnitude(command.motion_ref_pose_w[:, 3:7], command.robot_ref_pose_w[:, 3:7])
 
+
+def motion_ref_lin_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+
+    return torch.exp(-torch.norm(command.motion_ref_vel_w[:, :3] - command.robot_ref_vel_w[:, :3], dim=1) / std)
+
+
+def motion_ref_ang_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+
+    return torch.exp(-torch.norm(command.motion_ref_vel_w[:, 3:6] - command.robot_ref_vel_w[:, 3:6], dim=1) / std)
 
 def motion_body_position_error(env: ManagerBasedRLEnv, command_name: str,
                                body_names: list[str] | None) -> torch.Tensor:  # TODO doesn't work
@@ -46,10 +57,10 @@ def motion_body_position_error(env: ManagerBasedRLEnv, command_name: str,
     return torch.norm(relative_pos_motion - relative_pos_robot, dim=1)
 
 
-def motion_body_position_error_tanh(
+def motion_body_position_error_exp(
         env: ManagerBasedRLEnv, std: float, command_name: str, body_names: Optional[list[str]] = None
 ) -> torch.Tensor:
-    return 1 - torch.tanh(motion_body_position_error(env, command_name, body_names) / std)
+    return torch.exp(-motion_body_position_error(env, command_name, body_names) / std)
 
 
 def motion_body_orientation_error(env: ManagerBasedRLEnv, command_name: str,

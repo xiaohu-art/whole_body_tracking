@@ -78,7 +78,7 @@ class CommandsCfg:
 class ActionsCfg:
     """Action specifications for the MDP."""
 
-    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.5, use_default_offset=True)
+    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.05, use_default_offset=True)
 
 
 @configclass
@@ -150,14 +150,8 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-3.14, 3.14)},
+            "pose_range": {"x": (-0.5, 0.5)},
             "velocity_range": {
-                "x": (-0.5, 0.5),
-                "y": (-0.5, 0.5),
-                "z": (-0.5, 0.5),
-                "roll": (-0.5, 0.5),
-                "pitch": (-0.5, 0.5),
-                "yaw": (-0.5, 0.5),
             },
         },
     )
@@ -183,30 +177,30 @@ class EventCfg:
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
-    motion_ref_pos_error_tanh = RewTerm(
-        func=mdp.motion_ref_position_error_tanh,
-        weight=1.0,
-        params={"std": 0.3, "command_name": "motion"},
+    motion_ref_pos = RewTerm(
+        func=mdp.motion_ref_position_error_exp, weight=1.0, params={"command_name": "motion", "std": 0.2},
     )
-    motion_ref_ori_error = RewTerm(
-        func=mdp.motion_ref_orientation_error,
-        weight=-1.0,
-        params={"command_name": "motion"},
+    motion_ref_ori = RewTerm(
+        func=mdp.motion_ref_orientation_error, weight=-1.0, params={"command_name": "motion"},
     )
-    # motion_body_pos_error_tanh = RewTerm(
-    #     func=mdp.motion_body_position_error_tanh,
+    motion_ref_lin_vel = RewTerm(
+        func=mdp.motion_ref_lin_vel_exp, weight=1.0, params={"command_name": "motion", "std": 0.5}
+    )
+    motion_ref_ang_vel = RewTerm(
+        func=mdp.motion_ref_ang_vel_exp, weight=1.0, params={"command_name": "motion", "std": 0.2}
+    )
+    # motion_body_pos = RewTerm(
+    #     func=mdp.motion_body_position_error_exp,
     #     weight=1.0,
-    #     params={"std": 0.1, "command_name": "motion"},
+    #     params={"command_name": "motion", "std": 0.1},
     # )
-    # motion_body_ori_error = RewTerm(
+    # motion_body_ori = RewTerm(
     #     func=mdp.motion_body_orientation_error,
     #     weight=-0.1,
     #     params={"command_name": "motion"},
     # )
-    motion_joint_error = RewTerm(
-        func=mdp.motion_joint_error,
-        weight=-1e-3,
-        params={"command_name": "motion"},
+    motion_joint = RewTerm(
+        func=mdp.motion_joint_error, weight=-1e-3, params={"command_name": "motion"},
     )
 
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
