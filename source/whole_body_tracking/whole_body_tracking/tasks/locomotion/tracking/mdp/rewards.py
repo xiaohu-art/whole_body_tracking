@@ -161,8 +161,20 @@ def motion_relative_body_ang_vel_exp(env: ManagerBasedRLEnv, command_name: str, 
     )
     return torch.exp(-((relative_ang_vel_motion - relative_ang_vel_robot).pow(2).mean(-1).mean(-1)) * std)
 
-def motion_relative_joint_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
+
+def motion_joint_pos_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
     return torch.norm(command.motion_joint_pos - command.robot_joint_pos, dim=1)
 
-# TODO velocity relative
+
+def motion_joint_pos_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
+    return torch.exp(-motion_joint_pos_error(env, command_name) / std ** 2)
+
+
+def motion_joint_vel_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    return torch.norm(command.motion_joint_vel - command.robot_joint_vel, dim=1)
+
+
+def motion_joint_vel_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
+    return torch.exp(-motion_joint_vel_error(env, command_name) / std ** 2)

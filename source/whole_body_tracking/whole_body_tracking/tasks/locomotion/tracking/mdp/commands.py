@@ -12,6 +12,7 @@ from isaaclab.managers import CommandTerm, CommandTermCfg
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
 from isaaclab.markers.config import FRAME_MARKER_CFG
 from isaaclab.utils import configclass
+from isaaclab.utils.math import subtract_frame_transforms
 from isaaclab_tasks.direct.humanoid_amp.motions import MotionLoader
 
 if TYPE_CHECKING:
@@ -55,18 +56,25 @@ class MotionCommand(CommandTerm):
 
     @property
     def command(self) -> torch.Tensor:  # TODO Consider again if this is the best observation
-        motion_ref_pose = self.motion_ref_pose_w.clone()
-        motion_ref_pose[:, :3] -= self.robot_ref_pose_w[:, :3]
-        motion_body_pose = self.motion_body_pose_w.clone()
-        motion_body_pose[:, :, :3] -= self.robot_ref_pose_w[:, None, :3]
+        motion_ref_pos_b, motion_ref_ori_b = subtract_frame_transforms(
+            self.robot_ref_pose_w[:, :3], self.robot_ref_pose_w[:, 3:7],
+            self.motion_ref_pose_w[:, :3], self.motion_ref_pose_w[:, 3:7],
+        )
+
+        num_bodies = len(self.cfg.body_names)
+        motion_body_pos_b, motion_body_ori_b = subtract_frame_transforms(
+            self.robot_ref_pose_w[:, None, :3].repeat(1, num_bodies, 1),
+            self.robot_ref_pose_w[:, None, 3:7].repeat(1, num_bodies, 1),
+            self.motion_body_pose_w[:, :, :3],
+            self.motion_body_pose_w[:, :, 3:7],
+        )
 
         return torch.cat([
-            motion_ref_pose,
-            self.motion_ref_vel_w,
-            motion_body_pose.view(self.num_envs, -1),
-            self.motion_body_vel_w.view(self.num_envs, -1),
+            motion_ref_pos_b,
+            motion_ref_ori_b,
+            motion_body_pos_b.view(self.num_envs, -1),
             self.motion_joint_pos,
-            self.motion_joint_vel,
+            self.motion_joint_vel
         ], dim=1)
 
     @property
