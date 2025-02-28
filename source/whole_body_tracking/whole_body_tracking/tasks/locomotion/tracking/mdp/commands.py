@@ -63,7 +63,7 @@ class MotionCommand(CommandTerm):
         return torch.cat([
             motion_ref_pose,
             self.motion_ref_vel_w,
-            motion_ref_pose.view(self.num_envs, -1),
+            motion_body_pose.view(self.num_envs, -1),
             self.motion_body_vel_w.view(self.num_envs, -1),
             self.motion_joint_pos,
             self.motion_joint_vel,
