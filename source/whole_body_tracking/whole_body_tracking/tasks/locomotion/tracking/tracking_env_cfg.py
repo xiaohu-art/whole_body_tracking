@@ -177,18 +177,18 @@ class EventCfg:
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
-    motion_ref_pos = RewTerm(
-        func=mdp.motion_ref_position_error_exp, weight=1.0, params={"command_name": "motion", "std": 0.2},
-    )
-    motion_ref_ori = RewTerm(
-        func=mdp.motion_ref_orientation_error, weight=-1.0, params={"command_name": "motion"},
-    )
-    motion_ref_lin_vel = RewTerm(
-        func=mdp.motion_ref_lin_vel_exp, weight=1.0, params={"command_name": "motion", "std": 0.5}
-    )
-    motion_ref_ang_vel = RewTerm(
-        func=mdp.motion_ref_ang_vel_exp, weight=1.0, params={"command_name": "motion", "std": 0.2}
-    )
+    # motion_ref_pos = RewTerm(
+    #     func=mdp.motion_ref_position_error_exp, weight=1.0, params={"command_name": "motion", "std": 0.2},
+    # )
+    # motion_ref_ori = RewTerm(
+    #     func=mdp.motion_ref_orientation_error, weight=-1.0, params={"command_name": "motion"},
+    # )
+    # motion_ref_lin_vel = RewTerm(
+    #     func=mdp.motion_ref_lin_vel_exp, weight=1.0, params={"command_name": "motion", "std": 0.5}
+    # )
+    # motion_ref_ang_vel = RewTerm(
+    #     func=mdp.motion_ref_ang_vel_exp, weight=1.0, params={"command_name": "motion", "std": 0.2}
+    # )
     # motion_body_pos = RewTerm(
     #     func=mdp.motion_body_position_error_exp,
     #     weight=1.0,
@@ -199,12 +199,26 @@ class RewardsCfg:
     #     weight=-0.1,
     #     params={"command_name": "motion"},
     # )
-    motion_joint = RewTerm(
-        func=mdp.motion_joint_error, weight=-1e-3, params={"command_name": "motion"},
-    )
+    # motion_joint = RewTerm(
+    #     func=mdp.motion_joint_error, weight=-1e-3, params={"command_name": "motion"},
+    # )
 
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
-    termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
+    # action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
+    # termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
+
+    motion_global_body_pos = RewTerm(
+        func=mdp.motion_global_body_position_error_exp, weight=0.5, params={"command_name": "motion", "std": 100},
+    )
+    motion_global_body_ori = RewTerm(
+        func=mdp.motion_global_body_orientation_error_exp, weight=0.3, params={"command_name": "motion", "std": 5},
+    )
+    motion_global_body_vel = RewTerm(
+        func=mdp.motion_global_body_lin_vel_exp, weight=0.1, params={"command_name": "motion", "std": 0.5},
+    )
+    motion_global_body_ang_vel = RewTerm(
+        func=mdp.motion_global_body_ang_vel_exp, weight=0.1, params={"command_name": "motion", "std": 0.1},
+    )
+    
 
 
 @configclass
