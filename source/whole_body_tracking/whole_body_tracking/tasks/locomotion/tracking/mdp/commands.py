@@ -38,7 +38,7 @@ class MotionCommand(CommandTerm):
         self.robot_joint_indexes = self.robot.find_joints(cfg.joint_names, preserve_order=True)[0]
 
         self.motion_times = np.zeros(self.num_envs)
-        self.motion_offset_pos = torch.zeros(self.num_envs, 2, device=self.device)
+        self.motion_offset_pos = env.scene.env_origins[:, :2]
 
         self.motion_ref_pose_w = torch.zeros(self.num_envs, 7, device=self.device)
         self.motion_ref_vel_w = torch.zeros(self.num_envs, 6, device=self.device)
@@ -125,18 +125,28 @@ class MotionCommand(CommandTerm):
         self.motion_times[env_ids.cpu()] = self.motion.sample_times(num_samples=len(env_ids))
 
         (
-            _,
-            _,
-            body_pos,
-            _,
-            _,
-            _,
-        ) = self.motion.sample(num_samples=self.num_envs, times=self.motion_times)
-        self.motion_offset_pos[env_ids] = (self.robot_ref_pose_w[env_ids, :2]
-                                           - body_pos[env_ids, self.motion_ref_body_index, :2])
+            motion_joint_pos,
+            motion_joint_vel,
+            motion_body_pos,
+            motion_body_rot,
+            motion_body_lin_vel,
+            motion_body_ang_vel,
+        ) = self.motion.sample(num_samples=len(env_ids), times=self.motion_times[env_ids.cpu()])
+        root_states = self.robot.data.default_root_state[env_ids].clone()
+        root_states[:, :3] = motion_body_pos[:, 0]
+        root_states[:, 2] += 0.05
+        root_states[:, :2] += self.motion_offset_pos[env_ids, :2]
+        root_states[:, 3:7] = motion_body_rot[:, 0]
+        joint_pos = self.robot.data.default_joint_pos[env_ids].clone()
+        joint_vel = self.robot.data.default_joint_vel[env_ids].clone()
+        joint_pos[:, self.robot_joint_indexes] = motion_joint_pos[:, self.motion_joint_indexes]
+        joint_vel[:, self.robot_joint_indexes] = motion_joint_vel[:, self.motion_joint_indexes]
+        self.robot.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
+        self.robot.write_root_link_state_to_sim(root_states, env_ids=env_ids)
 
     def _update_command(self):
         self.motion_times += self._env.step_dt
+
         (
             joint_pos,
             joint_vel,

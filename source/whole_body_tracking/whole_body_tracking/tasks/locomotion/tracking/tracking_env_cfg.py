@@ -11,14 +11,12 @@ from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
-from isaaclab.sensors import ContactSensorCfg
 import isaaclab.sim as sim_utils
 from isaaclab.terrains import TerrainImporterCfg
 ##
 # Pre-defined configs
 ##
 from isaaclab.utils import configclass
-from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 import whole_body_tracking.tasks.locomotion.tracking.mdp as mdp
 
 
@@ -49,7 +47,6 @@ class MySceneCfg(InteractiveSceneCfg):
     )
     # robots
     robot: ArticulationCfg = MISSING
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
@@ -71,7 +68,7 @@ class CommandsCfg:
     """Command specifications for the MDP."""
 
     motion = mdp.MotionCommandCfg(asset_name="robot",
-                                  resampling_time_range=(10.0, 10.0), debug_vis=True)
+                                  resampling_time_range=(1.0e9, 1.0e9), debug_vis=True)
 
 
 @configclass
@@ -123,34 +120,6 @@ class EventCfg:
             "restitution_range": (0.0, 0.0),
             "num_buckets": 64,
         },
-    )
-
-
-    reset_base = EventTerm(
-        func=mdp.reset_root_state_uniform,
-        mode="reset",
-        params={
-            "pose_range": {"x": (-0.5, 0.5)},
-            "velocity_range": {
-            },
-        },
-    )
-
-    reset_robot_joints = EventTerm(
-        func=mdp.reset_joints_by_scale,
-        mode="reset",
-        params={
-            "position_range": (0.5, 1.5),
-            "velocity_range": (0.0, 0.0),
-        },
-    )
-
-    # interval
-    push_robot = EventTerm(
-        func=mdp.push_by_setting_velocity,
-        mode="interval",
-        interval_range_s=(10.0, 15.0),
-        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
     )
 
 
@@ -222,14 +191,10 @@ class TrackingEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 4
-        self.episode_length_s = 20.0
+        self.episode_length_s = 10.0
         # simulation settings
         self.sim.dt = 0.005
         self.sim.render_interval = self.decimation
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
         self.sim.physx.gpu_max_rigid_patch_count = 10 * 2 ** 15
-        # update sensor update periods
-        # we tick all the sensors based on the smallest update period (physics update period)
-        if self.scene.contact_forces is not None:
-            self.scene.contact_forces.update_period = self.sim.dt
