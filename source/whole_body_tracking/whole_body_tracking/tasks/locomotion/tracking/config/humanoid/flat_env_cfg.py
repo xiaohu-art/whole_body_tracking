@@ -1,9 +1,7 @@
-import os
-
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.utils import configclass
-from isaaclab_assets import HUMANOID_28_CFG
-from isaaclab_tasks.direct.humanoid_amp.humanoid_amp_env_cfg import MOTIONS_DIR
+from whole_body_tracking.assets import ASSET_DIR
+from whole_body_tracking.robots.smpl import SMPL_HUMANOID
 from whole_body_tracking.tasks.locomotion.tracking.tracking_env_cfg import TrackingEnvCfg
 
 
@@ -12,7 +10,7 @@ class HumanoidFlatEnvCfg(TrackingEnvCfg):
     def __post_init__(self):
         super().__post_init__()
 
-        self.scene.robot = HUMANOID_28_CFG.replace(
+        self.scene.robot = SMPL_HUMANOID.replace(
             actuators={
                 "body": ImplicitActuatorCfg(
                     joint_names_expr=[".*"],
@@ -22,28 +20,35 @@ class HumanoidFlatEnvCfg(TrackingEnvCfg):
                 ),
             },
         )
-        self.scene.robot.spawn.activate_contact_sensors = True
-        self.scene.robot.init_state.pos = (0.0, 0.0, 1.2)
 
-        self.commands.motion.reference_body = "torso"
-        self.commands.motion.joint_names = ['abdomen_x', 'abdomen_y', 'abdomen_z', 'neck_x', 'neck_y', 'neck_z',
-                                            'right_shoulder_x', 'right_shoulder_y', 'right_shoulder_z',
-                                            'right_elbow', 'left_shoulder_x', 'left_shoulder_y',
-                                            'left_shoulder_z', 'left_elbow', 'right_hip_x', 'right_hip_y',
-                                            'right_hip_z', 'right_knee', 'right_ankle_x', 'right_ankle_y',
-                                            'right_ankle_z', 'left_hip_x', 'left_hip_y', 'left_hip_z',
-                                            'left_knee', 'left_ankle_x', 'left_ankle_y', 'left_ankle_z']
-        self.commands.motion.body_names = ["head", "pelvis", "right_hand", "left_hand", "right_foot", "left_foot"]
+        self.commands.motion.reference_body = "Torso"
+        self.commands.motion.joint_names = ['L_Hip_x', 'L_Hip_y', 'L_Hip_z', 'L_Knee_x', 'L_Knee_y', 'L_Knee_z',
+                                            'L_Ankle_x', 'L_Ankle_y', 'L_Ankle_z', 'L_Toe_x', 'L_Toe_y', 'L_Toe_z',
+                                            'R_Hip_x', 'R_Hip_y', 'R_Hip_z', 'R_Knee_x', 'R_Knee_y', 'R_Knee_z',
+                                            'R_Ankle_x', 'R_Ankle_y', 'R_Ankle_z', 'R_Toe_x', 'R_Toe_y', 'R_Toe_z',
+                                            'Torso_x', 'Torso_y', 'Torso_z', 'Spine_x', 'Spine_y', 'Spine_z', 'Chest_x',
+                                            'Chest_y', 'Chest_z', 'Neck_x', 'Neck_y', 'Neck_z', 'Head_x', 'Head_y',
+                                            'Head_z', 'L_Thorax_x', 'L_Thorax_y', 'L_Thorax_z', 'L_Shoulder_x',
+                                            'L_Shoulder_y', 'L_Shoulder_z', 'L_Elbow_x', 'L_Elbow_y', 'L_Elbow_z',
+                                            'L_Wrist_x', 'L_Wrist_y', 'L_Wrist_z', 'L_Hand_x', 'L_Hand_y', 'L_Hand_z',
+                                            'R_Thorax_x', 'R_Thorax_y', 'R_Thorax_z', 'R_Shoulder_x', 'R_Shoulder_y',
+                                            'R_Shoulder_z', 'R_Elbow_x', 'R_Elbow_y', 'R_Elbow_z', 'R_Wrist_x',
+                                            'R_Wrist_y', 'R_Wrist_z', 'R_Hand_x', 'R_Hand_y', 'R_Hand_z']
 
-@configclass
-class HumanoidFlatDanceEnvCfg(HumanoidFlatEnvCfg):
-    def __post_init__(self):
-        super().__post_init__()
-        self.commands.motion.motion_file = os.path.join(MOTIONS_DIR, "humanoid_dance.npz")
+        # self.commands.motion.body_names = ['Pelvis', 'L_Hip', 'L_Knee', 'L_Ankle', 'L_Toe', 'R_Hip', 'R_Knee',
+        #                                    'R_Ankle', 'R_Toe', 'Torso',
+        #                                    'Spine', 'Chest', 'Neck', 'Head', 'L_Thorax', 'L_Shoulder', 'L_Elbow',
+        #                                    'L_Wrist', 'L_Hand', 'R_Thorax',
+        #                                    'R_Shoulder', 'R_Elbow', 'R_Wrist', 'R_Hand']
+
+        self.commands.motion.body_names = ['Pelvis', 'L_Knee', 'L_Ankle', 'L_Toe', 'R_Knee',
+                                           'R_Ankle', 'R_Toe', 'Torso',
+                                           'Spine', 'Chest', 'Neck', 'Head', 'L_Shoulder', 'L_Elbow', 'L_Hand',
+                                           'R_Elbow', 'R_Hand']
 
 
 @configclass
 class HumanoidFlatWalkEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
-        self.commands.motion.motion_file = os.path.join(MOTIONS_DIR, "humanoid_walk.npz")
+        self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motion/walk.npz"

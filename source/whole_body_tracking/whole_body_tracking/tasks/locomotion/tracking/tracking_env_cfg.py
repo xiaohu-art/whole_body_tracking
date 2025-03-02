@@ -136,10 +136,10 @@ class RewardsCfg:
         func=mdp.motion_global_body_position_error_exp, weight=0.5, params={"command_name": "motion", "std": 100},
     )
     motion_joint_pos = RewTerm(
-        func=mdp.motion_joint_pos_error, weight=-1e-1, params={"command_name": "motion"},
+        func=mdp.motion_joint_pos_error, weight=-1e-0, params={"command_name": "motion"},
     )
     motion_joint_vel = RewTerm(
-        func=mdp.motion_joint_vel_error, weight=-1e-2, params={"command_name": "motion"},
+        func=mdp.motion_joint_vel_error, weight=-1e-1, params={"command_name": "motion"},
     )
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
     termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
@@ -191,10 +191,14 @@ class TrackingEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 4
-        self.episode_length_s = 10.0
+        self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 0.005
         self.sim.render_interval = self.decimation
         self.sim.disable_contact_processing = True
         self.sim.physics_material = self.scene.terrain.physics_material
         self.sim.physx.gpu_max_rigid_patch_count = 10 * 2 ** 15
+        # viewer settings
+        self.viewer.eye = (1.5, 1.5, 1.5)
+        self.viewer.origin_type = "asset_root"
+        self.viewer.asset_name = "robot"
