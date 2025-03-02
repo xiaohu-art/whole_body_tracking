@@ -137,6 +137,9 @@ class MotionCommand(CommandTerm):
         root_states[:, 2] += 0.05
         root_states[:, :2] += self.motion_offset_pos[env_ids, :2]
         root_states[:, 3:7] = motion_body_rot[:, 0]
+        root_states[:, 7:10] = motion_body_lin_vel[:, 0]
+        root_states[:, 10:] = motion_body_ang_vel[:, 0]
+
         joint_pos = self.robot.data.default_joint_pos[env_ids].clone()
         joint_vel = self.robot.data.default_joint_vel[env_ids].clone()
         joint_pos[:, self.robot_joint_indexes] = motion_joint_pos[:, self.motion_joint_indexes]
