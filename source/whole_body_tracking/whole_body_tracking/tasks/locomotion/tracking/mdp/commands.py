@@ -37,7 +37,7 @@ class MotionCommand(CommandTerm):
         self.robot_body_indexes = self.robot.find_bodies(cfg.body_names, preserve_order=True)[0]
         self.robot_joint_indexes = self.robot.find_joints(cfg.joint_names, preserve_order=True)[0]
 
-        self.motion_times = np.zeros(self.num_envs)
+        self.motion_times = np.zeros(self.num_envs)  # TODO: should be a tensor, need to modify the motion loader
         self.motion_offset_pos = env.scene.env_origins[:, :2]
 
         self.motion_ref_pose_w = torch.zeros(self.num_envs, 7, device=self.device)
@@ -146,6 +146,9 @@ class MotionCommand(CommandTerm):
 
     def _update_command(self):
         self.motion_times += self._env.step_dt
+
+        env_ids = torch.from_numpy(np.where(self.motion_times > self.motion.duration)[0]).to(self.device)
+        self._resample_command(env_ids)
 
         (
             joint_pos,

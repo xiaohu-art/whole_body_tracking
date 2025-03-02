@@ -52,7 +52,6 @@ class HumanoidFlatWalkEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motion/walk.npz"
-        self.episode_length_s = 5.0
 
 
 @configclass
@@ -60,7 +59,6 @@ class HumanoidFlatWalkBackEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motion/walk_back.npz"
-        self.episode_length_s = 8.0
 
 
 @configclass
@@ -68,4 +66,3 @@ class HumanoidFlatWalkBoxEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motion/walk_box.npz"
-        self.episode_length_s = 11.0
