@@ -1,11 +1,11 @@
-import isaaclab.sim as sim_utils
-from isaaclab.assets.articulation import ArticulationCfg
 from isaaclab.actuators import ImplicitActuatorCfg
-
+from isaaclab.assets.articulation import ArticulationCfg
+import isaaclab.sim as sim_utils
+from whole_body_tracking.assets import ASSET_DIR
 
 G1_CYLINDER_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path="assets/g1/g1_cylinderfoot_onelink_minimal.usd",
+        usd_path=f"{ASSET_DIR}/g1/g1.usd",
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
@@ -91,7 +91,7 @@ G1_CYLINDER_CFG = ArticulationCfg(
         "waist": ImplicitActuatorCfg(
             effort_limit=88,
             velocity_limit=32.0,
-            joint_names_expr=["waist_yaw_joint"],
+            joint_names_expr=["waist_yaw_joint", "waist_roll_joint", "waist_pitch_joint"],
             stiffness=75.0,
             damping=2.0,
             armature=0.01017752004,

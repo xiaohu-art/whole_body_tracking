@@ -51,18 +51,18 @@ class HumanoidFlatEnvCfg(TrackingEnvCfg):
 class HumanoidFlatWalkEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
-        self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motion/walk.npz"
+        self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motions/walk.npz"
 
 
 @configclass
 class HumanoidFlatWalkBackEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
-        self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motion/walk_back.npz"
+        self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motions/walk_back.npz"
 
 
 @configclass
 class HumanoidFlatWalkBoxEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
-        self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motion/walk_box.npz"
+        self.commands.motion.motion_file = f"{ASSET_DIR}/smpl/motions/walk_box.npz"
