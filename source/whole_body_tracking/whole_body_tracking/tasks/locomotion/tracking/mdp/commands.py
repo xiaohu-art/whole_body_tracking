@@ -79,19 +79,19 @@ class MotionCommand(CommandTerm):
 
     @property
     def robot_ref_pose_w(self) -> torch.Tensor:
-        return self.robot.data.body_link_state_w[:, self.robot_ref_body_index, :7]
+        return self.robot.data.body_state_w[:, self.robot_ref_body_index, :7]
 
     @property
     def robot_ref_vel_w(self) -> torch.Tensor:
-        return self.robot.data.body_link_vel_w[:, self.robot_ref_body_index]
+        return self.robot.data.body_vel_w[:, self.robot_ref_body_index]
 
     @property
     def robot_body_pose_w(self) -> torch.Tensor:
-        return self.robot.data.body_link_state_w[:, self.robot_body_indexes, :7]
+        return self.robot.data.body_state_w[:, self.robot_body_indexes, :7]
 
     @property
     def robot_body_vel_w(self) -> torch.Tensor:
-        return self.robot.data.body_link_vel_w[:, self.robot_body_indexes]
+        return self.robot.data.body_vel_w[:, self.robot_body_indexes]
 
     @property
     def robot_joint_pos(self) -> torch.Tensor:
@@ -145,7 +145,7 @@ class MotionCommand(CommandTerm):
         joint_pos[:, self.robot_joint_indexes] = motion_joint_pos[:, self.motion_joint_indexes]
         joint_vel[:, self.robot_joint_indexes] = motion_joint_vel[:, self.motion_joint_indexes]
         self.robot.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
-        self.robot.write_root_link_state_to_sim(root_states, env_ids=env_ids)
+        self.robot.write_root_state_to_sim(root_states, env_ids=env_ids)
 
     def _update_command(self):
         self.motion_times += self._env.step_dt
