@@ -39,6 +39,7 @@ class MotionCommand(CommandTerm):
 
         self.motion_times = np.zeros(self.num_envs)  # TODO: should be a tensor, need to modify the motion loader
         self.motion_offset_pos = env.scene.env_origins[:, :2]
+        self.metric_interval = cfg.metric_interval
 
         self.motion_ref_pose_w = torch.zeros(self.num_envs, 7, device=self.device)
         self.motion_ref_vel_w = torch.zeros(self.num_envs, 6, device=self.device)
@@ -102,6 +103,10 @@ class MotionCommand(CommandTerm):
         return self.robot.data.joint_vel[:, self.robot_joint_indexes]
 
     def _update_metrics(self):
+        if self.metric_interval != 0:
+            self.metric_interval -= 1
+            return
+        self.metric_interval = self.cfg.metric_interval
         self.metrics["error_ref_pos"] = torch.norm(
             self.motion_ref_pose_w[:, :3] - self.robot_ref_pose_w[:, :3], dim=1)
         self.metrics["error_ref_rot"] = torch.norm(
@@ -151,7 +156,8 @@ class MotionCommand(CommandTerm):
         self.motion_times += self._env.step_dt
 
         env_ids = torch.from_numpy(np.where(self.motion_times > self.motion.duration)[0]).to(self.device)
-        self._resample_command(env_ids)
+        if len(env_ids) > 0:
+            self._resample_command(env_ids)
 
         (
             joint_pos,
@@ -231,6 +237,7 @@ class MotionCommandCfg(CommandTermCfg):
     reference_body: str = MISSING
     joint_names: list[str] = MISSING
     body_names: list[str] = MISSING
+    metric_interval: int = 10
 
     ref_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
     ref_visualizer_cfg.markers["frame"].scale = (0.2, 0.2, 0.2)
