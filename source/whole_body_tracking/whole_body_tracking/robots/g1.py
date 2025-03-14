@@ -84,8 +84,8 @@ G1_CYLINDER_CFG = ArticulationCfg(
                 ".*_ankle_roll_joint": 37.0,
             },
             joint_names_expr=[".*_ankle_pitch_joint", ".*_ankle_roll_joint"],
-            stiffness={".*_ankle_pitch_joint": 20.0, ".*_ankle_roll_joint": 2.0},
-            damping={".*_ankle_pitch_joint": 1.0, ".*_ankle_roll_joint": 0.2},
+            stiffness={".*_ankle_pitch_joint": 20.0, ".*_ankle_roll_joint": 20.0},
+            damping={".*_ankle_pitch_joint": 2.0, ".*_ankle_roll_joint": 2.0},
             armature={".*_ankle_pitch_joint": 0.00721945, ".*_ankle_roll_joint": 0.00721945},
         ),
         "waist": ImplicitActuatorCfg(
