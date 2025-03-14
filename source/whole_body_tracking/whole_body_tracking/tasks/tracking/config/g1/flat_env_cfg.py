@@ -1,7 +1,7 @@
 from isaaclab.utils import configclass
 from whole_body_tracking.assets import ASSET_DIR
 from whole_body_tracking.robots.g1 import G1_CYLINDER_CFG
-from whole_body_tracking.tasks.locomotion.tracking.tracking_env_cfg import TrackingEnvCfg
+from whole_body_tracking.tasks.tracking.tracking_env_cfg import TrackingEnvCfg
 
 
 @configclass

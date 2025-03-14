@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import torch
 
 from isaaclab.utils.math import subtract_frame_transforms
-from whole_body_tracking.tasks.locomotion.tracking.mdp.commands import MotionCommand
+from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv

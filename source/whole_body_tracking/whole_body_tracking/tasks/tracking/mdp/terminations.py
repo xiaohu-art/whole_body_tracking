@@ -9,7 +9,7 @@ import isaaclab.utils.math as math_utils
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
-from whole_body_tracking.tasks.locomotion.tracking.mdp.commands import MotionCommand
+from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
 from isaaclab.assets import Articulation, RigidObject
 from isaaclab.managers import SceneEntityCfg
 
