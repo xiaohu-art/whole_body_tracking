@@ -69,7 +69,8 @@ class CommandsCfg:
     """Command specifications for the MDP."""
 
     motion = mdp.MotionCommandCfg(asset_name="robot",
-                                  resampling_time_range=(1.0e9, 1.0e9), debug_vis=True)
+                                  resampling_time_range=(1.0e9, 1.0e9), debug_vis=True,
+                                  pose_range={"x": (-0.3, 0.3), "y": (-0.3, 0.3), "yaw": (-1.57, 1.57)})
 
 
 @configclass
@@ -95,7 +96,7 @@ class ObservationsCfg:
                            noise=Unoise(n_min=-0.05, n_max=0.05))
         body_ori = ObsTerm(func=mdp.robot_body_ori_b, params={"command_name": "motion"},
                            noise=Unoise(n_min=-0.05, n_max=0.05))
-        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.5, n_max=0.5))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-0.5, n_max=0.5))
@@ -145,6 +146,28 @@ class EventCfg:
             "operation": "scale",
         },
     )
+
+    # add_all_joint_default_pos = EventTerm(
+    #     func=mdp.randomize_joint_default_pos,
+    #     mode="startup",
+    #     params={
+    #         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]),
+    #         "pos_distribution_params": (-0.05, 0.05),
+    #         "operation": "add",
+    #     },
+    # )
+    #
+    # # reset
+    # base_external_force_torque = EventTerm(
+    #     func=mdp.apply_external_force_torque,
+    #     mode="reset",
+    #     params={
+    #         "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
+    #         "force_range": (-0.0, 0.0),
+    #         "torque_range": (-5.0, 5.0),
+    #     },
+    # )
+
 
 @configclass
 class RewardsCfg:

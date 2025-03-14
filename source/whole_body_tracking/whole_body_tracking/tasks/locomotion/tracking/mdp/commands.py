@@ -12,6 +12,7 @@ from isaaclab.managers import CommandTerm, CommandTermCfg
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
 from isaaclab.markers.config import FRAME_MARKER_CFG
 from isaaclab.utils import configclass
+import isaaclab.utils.math as math_utils
 from isaaclab.utils.math import subtract_frame_transforms
 from isaaclab_tasks.direct.humanoid_amp.motions import MotionLoader
 
@@ -140,6 +141,17 @@ class MotionCommand(CommandTerm):
         root_states[:, 7:10] = motion_body_lin_vel[:, 0]
         root_states[:, 10:] = motion_body_ang_vel[:, 0]
 
+        range_list = [self.cfg.pose_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
+        ranges = torch.tensor(range_list, device=self.device)
+        rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=self.device)
+        root_states[:, 0:3] += rand_samples[:, 0:3]
+        orientations_delta = math_utils.quat_from_euler_xyz(rand_samples[:, 3], rand_samples[:, 4], rand_samples[:, 5])
+        root_states[:, 3:7] = math_utils.quat_mul(orientations_delta, root_states[:, 3:7])
+        range_list = [self.cfg.velocity_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
+        ranges = torch.tensor(range_list, device=self.device)
+        rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=self.device)
+        root_states[:, 7:] += rand_samples[:, :]
+
         joint_pos = self.robot.data.default_joint_pos[env_ids].clone()
         joint_vel = self.robot.data.default_joint_vel[env_ids].clone()
         joint_pos[:, self.robot_joint_indexes] = motion_joint_pos[:, self.motion_joint_indexes]
@@ -231,6 +243,9 @@ class MotionCommandCfg(CommandTermCfg):
     reference_body: str = MISSING
     joint_names: list[str] = MISSING
     body_names: list[str] = MISSING
+
+    pose_range: dict[str, tuple[float, float]] = {}
+    velocity_range: dict[str, tuple[float, float]] = {}
 
     ref_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
     ref_visualizer_cfg.markers["frame"].scale = (0.2, 0.2, 0.2)
