@@ -5,7 +5,7 @@ import math
 
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg
-from isaaclab.managers import ObservationGroupCfg as ObsGroup
+from isaaclab.managers import ObservationGroupCfg as ObsGroup, SceneEntityCfg
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import TerminationTermCfg as DoneTerm
@@ -114,6 +114,7 @@ class RewardsCfg:
     root_pos = RewTerm(func=mdp.root_pos_exp, weight=1.0, params={"command_name": "real_traj", "std": math.sqrt(0.1)})
     root_lin_vel = RewTerm(func=mdp.root_lin_vel_exp, weight=1.0,
                            params={"command_name": "real_traj", "std": math.sqrt(0.1)})
+    termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
 
 
 @configclass
@@ -121,6 +122,16 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
+
+    ref_pos = DoneTerm(
+        func=mdp.bad_ref_pos,
+        params={"command_name": "real_traj", "threshold": 0.5},
+    )
+    ref_ori = DoneTerm(
+        func=mdp.bad_ref_ori,
+        params={"asset_cfg": SceneEntityCfg("robot"), "command_name": "real_traj", "threshold": 0.8},
+    )
+
 
 @configclass
 class CurriculumCfg:
