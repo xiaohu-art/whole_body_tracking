@@ -25,7 +25,7 @@ def root_pos_exp(env: ManagerBasedRLEnv, std: float, command_name: str) -> torch
 def root_ori_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     command: RealTrajCommand = env.command_manager.get_term(command_name)
 
-    return quat_error_magnitude(command.metrics["error_root_rot"])
+    return command.metrics["error_root_rot"]
 
 
 def root_ori_exp(env: ManagerBasedRLEnv, std: float, command_name: str) -> torch.Tensor:
@@ -36,7 +36,7 @@ def root_ori_exp(env: ManagerBasedRLEnv, std: float, command_name: str) -> torch
 def root_lin_vel_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     command: RealTrajCommand = env.command_manager.get_term(command_name)
 
-    return torch.norm(command.metrics["error_root_lin_vel"], dim=-1)
+    return command.metrics["error_root_lin_vel"]
 
 
 def root_lin_vel_exp(env: ManagerBasedRLEnv, std: float, command_name: str) -> torch.Tensor:
@@ -46,9 +46,31 @@ def root_lin_vel_exp(env: ManagerBasedRLEnv, std: float, command_name: str) -> t
 
 def root_ang_vel_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     command: RealTrajCommand = env.command_manager.get_term(command_name)
-    return torch.norm(command.metrics["error_root_ang_vel"], dim=-1)
+    return command.metrics["error_root_ang_vel"]
 
 
 def root_ang_vel_exp(env: ManagerBasedRLEnv, std: float, command_name: str) -> torch.Tensor:
     error = root_ang_vel_error(env, command_name)
+    return torch.exp(-error ** 2 / std ** 2)
+
+
+def joint_pos_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
+    command: RealTrajCommand = env.command_manager.get_term(command_name)
+
+    return command.metrics["error_joint_pos"]
+
+
+def joint_pos_exp(env: ManagerBasedRLEnv, std: float, command_name: str) -> torch.Tensor:
+    error = joint_pos_error(env, command_name)
+    return torch.exp(-error ** 2 / std ** 2)
+
+
+def joint_vel_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
+    command: RealTrajCommand = env.command_manager.get_term(command_name)
+
+    return command.metrics["error_joint_vel"]
+
+
+def joint_vel_exp(env: ManagerBasedRLEnv, std: float, command_name: str) -> torch.Tensor:
+    error = joint_vel_error(env, command_name)
     return torch.exp(-error ** 2 / std ** 2)

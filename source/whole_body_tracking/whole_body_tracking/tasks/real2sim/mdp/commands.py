@@ -40,8 +40,8 @@ class RealTrajCommand(CommandTerm):
         self.metrics["error_root_rot"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["error_root_lin_vel"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["error_root_ang_vel"] = torch.zeros(self.num_envs, device=self.device)
-        self.metrics["error_joint_pos"] = torch.zeros(self.num_envs, self.traj_loader.num_joints, device=self.device)
-        self.metrics["error_joint_vel"] = torch.zeros(self.num_envs, self.traj_loader.num_joints, device=self.device)
+        self.metrics["error_joint_pos"] = torch.zeros(self.num_envs, device=self.device)
+        self.metrics["error_joint_vel"] = torch.zeros(self.num_envs, device=self.device)
 
     @property
     def command(self) -> torch.Tensor:
