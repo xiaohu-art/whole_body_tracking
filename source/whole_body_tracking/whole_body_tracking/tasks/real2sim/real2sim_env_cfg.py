@@ -73,7 +73,7 @@ class ActionsCfg:
     """Action specifications for the MDP."""
 
     joint_pos = mdp.OpenLoopActionCfg(asset_name="robot", joint_names=[".*"], scale=0.5)
-    wrench = mdp.WrenchActionCfg(asset_name="robot", body_name=["torso_link"])
+    wrench = mdp.WrenchActionCfg(asset_name="robot", body_name=["torso_link"], force_scale=5.0, torque_scale=2.0)
 
 @configclass
 class ObservationsCfg:

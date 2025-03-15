@@ -63,6 +63,8 @@ class WrenchAction(ActionTerm):
 
     def process_actions(self, actions: torch.Tensor) -> torch.Tensor:
         self._wrench = actions
+        self._wrench[:, :3] *= self.cfg.force_scale
+        self._wrench[:, 3:] *= self.cfg.torque_scale
         return actions
 
     def apply_actions(self) -> None:
@@ -117,6 +119,10 @@ class WrenchActionCfg(ActionTermCfg):
     class_type: type[ActionTerm] = WrenchAction
 
     body_name: str = MISSING
+
+    force_scale: float = MISSING
+
+    torque_scale: float = MISSING
 
     debug_vis: bool = True
 
