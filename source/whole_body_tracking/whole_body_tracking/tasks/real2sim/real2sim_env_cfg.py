@@ -5,6 +5,7 @@ import math
 
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg
+from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import ObservationGroupCfg as ObsGroup, SceneEntityCfg
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import RewardTermCfg as RewTerm
@@ -94,6 +95,7 @@ class ObservationsCfg:
         def __post_init__(self):
             self.enable_corruption = False
             self.concatenate_terms = True
+            self.history_length = 10
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
@@ -103,8 +105,38 @@ class ObservationsCfg:
 class EventCfg:
     """Configuration for events."""
 
-    pass
+    # startup
+    physics_material = EventTerm(
+        func=mdp.randomize_rigid_body_material,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
+            "static_friction_range": (0.3, 0.8),
+            "dynamic_friction_range": (0.3, 0.6),
+            "restitution_range": (0.0, 0.5),
+            "num_buckets": 64,
+        },
+    )
 
+    add_base_mass = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
+            "mass_distribution_params": (-3.0, 3.0),
+            "operation": "add",
+        },
+    )
+
+    scale_all_link_masses = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
+            "mass_distribution_params": (0.9, 1.1),
+            "operation": "scale",
+        },
+    )
 
 
 @configclass
@@ -112,8 +144,14 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     root_pos = RewTerm(func=mdp.root_pos_exp, weight=1.0, params={"command_name": "real_traj", "std": math.sqrt(0.1)})
+    root_ori = RewTerm(func=mdp.root_ori_exp, weight=0.5, params={"command_name": "real_traj", "std": math.sqrt(0.3)})
     root_lin_vel = RewTerm(func=mdp.root_lin_vel_exp, weight=1.0,
                            params={"command_name": "real_traj", "std": math.sqrt(0.1)})
+    root_ang_vel = RewTerm(func=mdp.root_ang_vel_exp, weight=0.5,
+                           params={"command_name": "real_traj", "std": math.sqrt(0.1)})
+    joint_pos = RewTerm(func=mdp.joint_pos_exp, weight=0.5, params={"command_name": "real_traj", "std": math.sqrt(0.3)})
+    joint_vel = RewTerm(func=mdp.joint_vel_exp, weight=0.5, params={"command_name": "real_traj", "std": math.sqrt(2.0)})
+
     termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
 
 
