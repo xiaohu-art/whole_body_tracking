@@ -89,8 +89,10 @@ class WrenchAction(ActionTerm):
     def _debug_vis_callback(self, event):
         if not self._asset.is_initialized:
             return
-        force_arrow_scale, force_arrow_quat = self._resolve_3d_vector_to_arrow(-self._wrench[:, :3])
-        torque_arrow_scale, torque_arrow_quat = self._resolve_3d_vector_to_arrow(-self._wrench[:, 3:])
+        force_arrow_scale, force_arrow_quat = self._resolve_3d_vector_to_arrow(
+            -self._wrench[:, :3] / self.cfg.force_scale)
+        torque_arrow_scale, torque_arrow_quat = self._resolve_3d_vector_to_arrow(
+            -self._wrench[:, 3:] / self.cfg.torque_scale)
         pos = self._asset.data.body_state_w[:, self.body_idx, :3].clone()
         self.force_visualizer.visualize(
             pos, force_arrow_quat, force_arrow_scale
@@ -104,7 +106,7 @@ class WrenchAction(ActionTerm):
         default_scale = GREEN_ARROW_X_MARKER_CFG.markers["arrow"].scale
         # arrow-scale
         arrow_scale = torch.tensor(default_scale, device=self.device).repeat(vec.shape[0], 1)
-        arrow_scale[:, 0] *= torch.linalg.norm(vec, dim=1) * 0.5
+        arrow_scale[:, 0] *= torch.linalg.norm(vec, dim=1)
         # arrow-direction
         heading_angle = torch.atan2(vec[:, 1], vec[:, 0])
         pitch_angle = torch.atan2(-vec[:, 2], torch.norm(vec[:, :2], dim=-1))
