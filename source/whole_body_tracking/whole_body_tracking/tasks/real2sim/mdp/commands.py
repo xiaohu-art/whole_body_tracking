@@ -25,13 +25,16 @@ class RealTrajCommand(CommandTerm):
         self.robot: Articulation = env.scene[cfg.asset_name]
 
         self.traj_loader = RealTrajLoader(cfg.traj_path, self.device)
-        # TODO: map q and v! joint order in real traj is different than in IssacLab
 
         self.frame_indexes = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
         self.q = torch.zeros(self.num_envs, self.traj_loader.num_joints + 7, device=self.device)
-        self.q[:, 3] = 1.0
         self.v = torch.zeros(self.num_envs, self.traj_loader.num_joints + 6, device=self.device)
         self.a = torch.zeros(self.num_envs, self.traj_loader.num_joints, device=self.device)
+
+        self.joint_indexes = []  # Joint order in real traj is different than in IssacLab, but action order is correct
+        for name in self.robot.joint_names:
+            assert name in self.traj_loader.joint_names, f"Joint {name} not found in the trajectory"
+            self.joint_indexes.append(self.traj_loader.joint_names.index(name))
 
         self.metrics["error_root_pos"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["error_root_rot"] = torch.zeros(self.num_envs, device=self.device)
@@ -63,11 +66,13 @@ class RealTrajCommand(CommandTerm):
 
     @property
     def joint_pos(self) -> torch.Tensor:
-        return self.q[:, 7:]
+        pos = self.q[:, 7:]
+        return pos[:, self.joint_indexes]
 
     @property
     def joint_vel(self) -> torch.Tensor:
-        return self.v[:, 6:]
+        vel = self.v[:, 6:]
+        return vel[:, self.joint_indexes]
 
     @property
     def action(self) -> torch.Tensor:
@@ -89,6 +94,7 @@ class RealTrajCommand(CommandTerm):
         self.robot.write_root_pose_to_sim(torch.cat([self.root_pos_w, self.root_quat_w], dim=-1)[env_ids], env_ids)
         self.robot.write_root_velocity_to_sim(torch.cat([self.root_lin_vel_w, self.root_ang_vel_w], dim=-1)[env_ids],
                                               env_ids)
+        self.robot.write_joint_state_to_sim(self.joint_pos[env_ids], self.joint_vel[env_ids], env_ids=env_ids)
 
     def _update_command(self):
         self.frame_indexes += 1
