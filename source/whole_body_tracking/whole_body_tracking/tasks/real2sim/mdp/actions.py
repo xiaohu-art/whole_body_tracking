@@ -11,11 +11,12 @@ from isaaclab.managers.action_manager import ActionTerm, ActionTermCfg
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
 from isaaclab.markers.config import BLUE_ARROW_X_MARKER_CFG, GREEN_ARROW_X_MARKER_CFG
 from isaaclab.utils import configclass
-from isaaclab.utils.math import quat_from_euler_xyz
+from isaaclab.utils.math import quat_from_euler_xyz, quat_rotate
 from .commands import RealTrajCommand
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
+
 
 
 class OpenLoopAction(JointPositionAction):
@@ -46,8 +47,8 @@ class WrenchAction(ActionTerm):
         super().__init__(cfg, env)
 
         self._asset: Articulation
-        self.body_idx = self._asset.find_bodies(cfg.body_name)[0][0]
-        self._wrench = torch.zeros(self.num_envs, 6, device=self.device)
+        self._body_idx = self._asset.find_bodies(cfg.body_name)[0][0]
+        self._wrench_b = torch.zeros(self.num_envs, 6, device=self.device)
 
     @property
     def action_dim(self) -> int:
@@ -55,22 +56,22 @@ class WrenchAction(ActionTerm):
 
     @property
     def raw_actions(self) -> torch.Tensor:
-        return self._wrench
+        return self._wrench_b
 
     @property
     def processed_actions(self) -> torch.Tensor:
-        return self._wrench
+        return self._wrench_b
 
     def process_actions(self, actions: torch.Tensor) -> torch.Tensor:
-        self._wrench = actions
-        self._wrench[:, :3] *= self.cfg.force_scale
-        self._wrench[:, 3:] *= self.cfg.torque_scale
+        self._wrench_b = actions
+        self._wrench_b[:, :3] *= self.cfg.force_scale
+        self._wrench_b[:, 3:] *= self.cfg.torque_scale
         return actions
 
     def apply_actions(self) -> None:
         self._asset: Articulation
-        self._asset.set_external_force_and_torque(self._wrench[:, None, :3], self._wrench[:, None, 3:], body_ids=[
-            self.body_idx])
+        self._asset.set_external_force_and_torque(self._wrench_b[:, None, :3], self._wrench_b[:, None, 3:], body_ids=[
+            self._body_idx])
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
@@ -90,10 +91,12 @@ class WrenchAction(ActionTerm):
         if not self._asset.is_initialized:
             return
         force_arrow_scale, force_arrow_quat = self._resolve_3d_vector_to_arrow(
-            -self._wrench[:, :3] / self.cfg.force_scale)
+            quat_rotate(self._asset.data.body_state_w[:, self._body_idx, 3:7],
+                        self._wrench_b[:, :3]) / self.cfg.force_scale)
         torque_arrow_scale, torque_arrow_quat = self._resolve_3d_vector_to_arrow(
-            -self._wrench[:, 3:] / self.cfg.torque_scale)
-        pos = self._asset.data.body_state_w[:, self.body_idx, :3].clone()
+            quat_rotate(self._asset.data.body_state_w[:, self._body_idx, 3:7],
+                        self._wrench_b[:, 3:]) / self.cfg.torque_scale)
+        pos = self._asset.data.body_state_w[:, self._body_idx, :3].clone()
         self.force_visualizer.visualize(
             pos, force_arrow_quat, force_arrow_scale
         )
