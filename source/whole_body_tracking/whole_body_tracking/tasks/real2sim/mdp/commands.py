@@ -80,6 +80,10 @@ class RealTrajCommand(CommandTerm):
     def action(self) -> torch.Tensor:
         return self._a
 
+    @property
+    def end_mask(self) -> torch.Tensor:
+        return self._traj_loader.get_end_mask(self._traj_ids, self._frame_offsets)
+
     def _update_metrics(self):
         self.metrics["error_root_pos"] = torch.norm(self.root_pos_w - self._robot.data.root_pos_w, dim=-1)
         self.metrics["error_root_rot"] = math.quat_error_magnitude(self.root_quat_w, self._robot.data.root_quat_w)
@@ -101,9 +105,7 @@ class RealTrajCommand(CommandTerm):
 
     def _update_command(self):
         self._frame_offsets += 1
-        mask = self._traj_loader.get_resample_mask(self._traj_ids, self._frame_offsets)
-        self._resample_command(torch.where(mask)[0])
-        env_ids = torch.where(~mask)[0]
+        env_ids = torch.where(~self.end_mask)[0]
         self._q[env_ids], self._v[env_ids], self._a[env_ids] = (
             self._traj_loader.sample_frame(self._traj_ids[env_ids], self._frame_offsets[env_ids]))
 

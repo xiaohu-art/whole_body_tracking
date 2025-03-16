@@ -162,6 +162,7 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    traj_end = DoneTerm(func=mdp.traj_end, params={"command_name": "real_traj"}, time_out=True)
 
     ref_pos = DoneTerm(
         func=mdp.bad_ref_pos,

@@ -120,7 +120,7 @@ class RealTrajLoader:
         frame_offsets = global_indexes - self._traj_offsets[traj_ids]
         return traj_ids, frame_offsets
 
-    def get_resample_mask(self, traj_ids: torch.Tensor, frame_offsets: torch.Tensor) -> torch.Tensor:
+    def get_end_mask(self, traj_ids: torch.Tensor, frame_offsets: torch.Tensor) -> torch.Tensor:
         """
         Provides a boolean mask indicating which environments (or commands) have reached the end
         of their assigned trajectory and need to be resampled.

@@ -14,6 +14,11 @@ from isaaclab.assets import Articulation, RigidObject
 from isaaclab.managers import SceneEntityCfg
 
 
+def traj_end(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
+    command: RealTrajCommand = env.command_manager.get_term(command_name)
+    return command.end_mask
+
+
 def bad_ref_pos(env: ManagerBasedRLEnv, command_name: str, threshold: float) -> torch.Tensor:
     command: RealTrajCommand = env.command_manager.get_term(command_name)
     return command.metrics["error_root_pos"] > threshold
