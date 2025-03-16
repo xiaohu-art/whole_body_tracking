@@ -1,6 +1,6 @@
 import gymnasium as gym
 
-from . import agents, flat_env_cfg, fine_tune_cfg
+from . import agents, fine_tune_cfg, flat_env_cfg
 
 ##
 # Register Gym environments.

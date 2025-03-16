@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
 
-
 class OpenLoopAction(JointPositionAction):
     cfg: OpenLoopActionCfg
     _asset: Articulation
@@ -33,6 +32,7 @@ class OpenLoopAction(JointPositionAction):
 
     def process_actions(self, actions: torch.Tensor):
         self._processed_actions = self._command_term.action * self._scale + self._offset
+
 
 @configclass
 class OpenLoopActionCfg(JointPositionActionCfg):

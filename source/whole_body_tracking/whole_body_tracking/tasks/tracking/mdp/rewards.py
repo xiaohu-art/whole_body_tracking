@@ -16,6 +16,7 @@ def motion_global_root_position_error(env: ManagerBasedRLEnv, command_name: str)
 
     return (command.motion_ref_pose_w[:, :3] - command.robot_ref_pose_w[:, :3]).pow(2).mean(-1)
 
+
 def motion_global_root_height_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
@@ -43,46 +44,61 @@ def motion_global_root_ang_vel_exp(env: ManagerBasedRLEnv, command_name: str, st
 
     return torch.exp(-((command.motion_ref_vel_w[:, 3:6] - command.robot_ref_vel_w[:, 3:6]).pow(2).mean(-1)) * std)
 
-def motion_global_body_position_error(env: ManagerBasedRLEnv, command_name: str, body_names: list[str] | None) -> torch.Tensor:
+
+def motion_global_body_position_error(env: ManagerBasedRLEnv, command_name: str,
+                                      body_names: list[str] | None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     if body_names is None:
         body_names = command.cfg.body_names
     body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
-    return (command.motion_body_pose_w[:, body_indexes, :3] - command.robot_body_pose_w[:, body_indexes, :3]).pow(2).mean(-1).mean(-1)
+    return (command.motion_body_pose_w[:, body_indexes, :3] - command.robot_body_pose_w[:, body_indexes, :3]).pow(
+        2).mean(-1).mean(-1)
 
 
-def motion_global_body_position_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float, body_names: Optional[list[str]] = None) -> torch.Tensor:
+def motion_global_body_position_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
+                                          body_names: Optional[list[str]] = None) -> torch.Tensor:
     return torch.exp(-motion_global_body_position_error(env, command_name, body_names) * std)
 
 
-def motion_global_body_orientation_error(env: ManagerBasedRLEnv, command_name: str, body_names: Optional[list[str]] = None) -> torch.Tensor:
+def motion_global_body_orientation_error(env: ManagerBasedRLEnv, command_name: str,
+                                         body_names: Optional[list[str]] = None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     if body_names is None:
         body_names = command.cfg.body_names
     body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
-    return quat_error_magnitude(command.motion_body_pose_w[:, body_indexes, 3:7], command.robot_body_pose_w[:, body_indexes, 3:7]).pow(2).mean(-1).mean(-1)
+    return quat_error_magnitude(command.motion_body_pose_w[:, body_indexes, 3:7],
+                                command.robot_body_pose_w[:, body_indexes, 3:7]).pow(2).mean(-1).mean(-1)
 
-def motion_global_body_orientation_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float, body_names: Optional[list[str]] = None) -> torch.Tensor:
+
+def motion_global_body_orientation_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
+                                             body_names: Optional[list[str]] = None) -> torch.Tensor:
     return torch.exp(-motion_global_body_orientation_error(env, command_name, body_names) * std)
 
-def motion_global_body_lin_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float, body_names: Optional[list[str]] = None) -> torch.Tensor:
+
+def motion_global_body_lin_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
+                                   body_names: Optional[list[str]] = None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     if body_names is None:
         body_names = command.cfg.body_names
     body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
-    return torch.exp(-((command.motion_body_vel_w[:, body_indexes, :3] - command.robot_body_vel_w[:, body_indexes, :3]).pow(2).mean(-1).mean(-1)) * std)
+    return torch.exp(-(
+        (command.motion_body_vel_w[:, body_indexes, :3] - command.robot_body_vel_w[:, body_indexes, :3]).pow(2).mean(
+            -1).mean(-1)) * std)
 
 
-def motion_global_body_ang_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float, body_names: Optional[list[str]] = None) -> torch.Tensor:
+def motion_global_body_ang_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
+                                   body_names: Optional[list[str]] = None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     if body_names is None:
         body_names = command.cfg.body_names
     body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
-    return torch.exp(-((command.motion_body_vel_w[:, body_indexes, 3:6] - command.robot_body_vel_w[:, body_indexes, 3:6]).pow(2).mean(-1).mean(-1)) * std)
+    return torch.exp(-(
+        (command.motion_body_vel_w[:, body_indexes, 3:6] - command.robot_body_vel_w[:, body_indexes, 3:6]).pow(2).mean(
+            -1).mean(-1)) * std)
 
 
 def motion_relative_body_position_error(env: ManagerBasedRLEnv, command_name: str,
@@ -133,7 +149,9 @@ def motion_relative_body_orientation_error(env: ManagerBasedRLEnv, command_name:
     )
     return quat_error_magnitude(relative_ori_motion, relative_ori_robot).pow(2).mean(-1).mean(-1)
 
-def motion_relative_body_lin_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float, body_names: Optional[list[str]] = None) -> torch.Tensor:
+
+def motion_relative_body_lin_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
+                                     body_names: Optional[list[str]] = None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     if body_names is None:
@@ -153,7 +171,8 @@ def motion_relative_body_lin_vel_exp(env: ManagerBasedRLEnv, command_name: str, 
     return torch.exp(-((relative_vel_motion - relative_vel_robot).pow(2).mean(-1).mean(-1)) * std)
 
 
-def motion_relative_body_ang_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float, body_names: Optional[list[str]] = None) -> torch.Tensor:
+def motion_relative_body_ang_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
+                                     body_names: Optional[list[str]] = None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     if body_names is None:

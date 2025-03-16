@@ -69,12 +69,14 @@ class CommandsCfg:
 
     real_traj = mdp.RealTrajCommandCfg(asset_name="robot", resampling_time_range=(1.0e9, 1.0e9))
 
+
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
 
     joint_pos = mdp.OpenLoopActionCfg(asset_name="robot", joint_names=[".*"], scale=0.5)
     wrench = mdp.WrenchActionCfg(asset_name="robot", body_name=["torso_link"], force_scale=5.0, torque_scale=2.0)
+
 
 @configclass
 class ObservationsCfg:

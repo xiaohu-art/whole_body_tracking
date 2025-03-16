@@ -17,8 +17,8 @@ from isaaclab.terrains import TerrainImporterCfg
 # Pre-defined configs
 ##
 from isaaclab.utils import configclass
-import whole_body_tracking.tasks.tracking.mdp as mdp
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
+import whole_body_tracking.tasks.tracking.mdp as mdp
 
 
 ##
@@ -204,6 +204,7 @@ class TerminationsCfg:
         func=mdp.bad_ref_ori,
         params={"asset_cfg": SceneEntityCfg("robot"), "command_name": "motion", "threshold": 0.8},
     )
+
 
 @configclass
 class CurriculumCfg:

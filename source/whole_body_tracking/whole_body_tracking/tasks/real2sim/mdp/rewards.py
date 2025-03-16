@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import torch
 
-from isaaclab.utils.math import quat_error_magnitude
 from whole_body_tracking.tasks.real2sim.mdp.commands import RealTrajCommand
 
 if TYPE_CHECKING:

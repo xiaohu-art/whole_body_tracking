@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import MISSING
 from typing import TYPE_CHECKING
-from collections.abc import Sequence
 
 import torch
 
