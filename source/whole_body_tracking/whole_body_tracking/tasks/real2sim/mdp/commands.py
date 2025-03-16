@@ -26,7 +26,9 @@ class RealTrajCommand(CommandTerm):
 
         self.traj_loader = RealTrajLoader(cfg.traj_path, self.device)
 
-        self.frame_indexes = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
+        self.traj_ids = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
+        self.frame_offsets = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
+
         self.q = torch.zeros(self.num_envs, self.traj_loader.num_joints + 7, device=self.device)
         self.v = torch.zeros(self.num_envs, self.traj_loader.num_joints + 6, device=self.device)
         self.a = torch.zeros(self.num_envs, self.traj_loader.num_joints, device=self.device)
@@ -87,9 +89,10 @@ class RealTrajCommand(CommandTerm):
         self.metrics["error_joint_vel"] = torch.norm(self.joint_vel - self.robot.data.joint_vel, dim=-1)
 
     def _resample_command(self, env_ids: Sequence[int]):
-        self.frame_indexes[env_ids] = self.traj_loader.sample_indexes(len(env_ids))
+        self.traj_ids[env_ids], self.frame_offsets[env_ids] = self.traj_loader.sample_indexes(len(env_ids))
 
-        self.q[env_ids], self.v[env_ids], self.a[env_ids] = self.traj_loader.sample_frame(self.frame_indexes[env_ids])
+        self.q[env_ids], self.v[env_ids], self.a[env_ids] = (
+            self.traj_loader.sample_frame(self.traj_ids[env_ids], self.frame_offsets[env_ids]))
 
         self.robot.write_root_pose_to_sim(torch.cat([self.root_pos_w, self.root_quat_w], dim=-1)[env_ids], env_ids)
         self.robot.write_root_velocity_to_sim(torch.cat([self.root_lin_vel_w, self.root_ang_vel_w], dim=-1)[env_ids],
@@ -97,11 +100,12 @@ class RealTrajCommand(CommandTerm):
         self.robot.write_joint_state_to_sim(self.joint_pos[env_ids], self.joint_vel[env_ids], env_ids=env_ids)
 
     def _update_command(self):
-        self.frame_indexes += 1
-        mask = (self.frame_indexes < self.traj_loader.num_frames)
-        self._resample_command(torch.where(~mask)[0])
-        env_ids = torch.where(mask)[0]
-        self.q[env_ids], self.v[env_ids], self.a[env_ids] = self.traj_loader.sample_frame(self.frame_indexes[env_ids])
+        self.frame_offsets += 1
+        mask = self.traj_loader.get_resample_mask(self.traj_ids, self.frame_offsets)
+        self._resample_command(torch.where(mask)[0])
+        env_ids = torch.where(~mask)[0]
+        self.q[env_ids], self.v[env_ids], self.a[env_ids] = (
+            self.traj_loader.sample_frame(self.traj_ids[env_ids], self.frame_offsets[env_ids]))
 
 
 @configclass

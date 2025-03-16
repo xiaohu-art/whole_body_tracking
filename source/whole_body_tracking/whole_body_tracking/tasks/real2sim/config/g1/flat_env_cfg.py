@@ -16,4 +16,4 @@ class G1FlatEnvCfg(Real2SimEnvCfg):
 class G1FlatDanceEnvCfg(G1FlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
-        self.commands.real_traj.traj_path = f"{ASSET_DIR}/g1/real_trajs/dance.npz"
+        self.commands.real_traj.traj_path = f"{ASSET_DIR}/g1/real_trajs"
