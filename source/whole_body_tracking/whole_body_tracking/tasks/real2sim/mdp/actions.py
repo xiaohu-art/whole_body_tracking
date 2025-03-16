@@ -47,62 +47,72 @@ class WrenchAction(ActionTerm):
         super().__init__(cfg, env)
 
         self._asset: Articulation
-        self._body_idx = self._asset.find_bodies(cfg.body_name)[0][0]
-        self._wrench_b = torch.zeros(self.num_envs, 6, device=self.device)
+        self._body_indexes = self._asset.find_bodies(cfg.body_names, preserve_order=True)[0]
+        self._num_bodies = len(self._body_indexes)
+        self._wrenches_b = torch.zeros(self.num_envs, self._num_bodies, 6, device=self.device)
 
     @property
     def action_dim(self) -> int:
-        return 6
+        return 6 * self._num_bodies
 
     @property
     def raw_actions(self) -> torch.Tensor:
-        return self._wrench_b
+        return self._wrenches_b
 
     @property
     def processed_actions(self) -> torch.Tensor:
-        return self._wrench_b
+        return self._wrenches_b
 
     def process_actions(self, actions: torch.Tensor) -> torch.Tensor:
-        self._wrench_b = actions
-        self._wrench_b[:, :3] *= self.cfg.force_scale
-        self._wrench_b[:, 3:] *= self.cfg.torque_scale
+        self._wrenches_b = actions.view(self.num_envs, self._num_bodies, 6)
+        self._wrenches_b[:, :, :3] *= self.cfg.force_scale
+        self._wrenches_b[:, :, 3:] *= self.cfg.torque_scale
         return actions
 
     def apply_actions(self) -> None:
         self._asset: Articulation
-        self._asset.set_external_force_and_torque(self._wrench_b[:, None, :3], self._wrench_b[:, None, 3:], body_ids=[
-            self._body_idx])
+        self._asset.set_external_force_and_torque(self._wrenches_b[:, :, :3], self._wrenches_b[:, :, 3:],
+                                                  body_ids=self._body_indexes)
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
             # create markers if necessary for the first tome
-            if not hasattr(self, "force_visualizer"):
-                self.force_visualizer = VisualizationMarkers(self.cfg.force_visualizer_cfg)
-                self.torque_visualizer = VisualizationMarkers(self.cfg.torque_visualizer_cfg)
+            if not hasattr(self, "force_visualizers"):
+                self.force_visualizers = []
+                self.torque_visualizers = []
+
+                for name in self.cfg.body_names:
+                    self.force_visualizers.append(VisualizationMarkers(self.cfg.force_visualizer_cfg.replace(
+                        prim_path="/Visuals/Action/force/" + name)))
+                    self.torque_visualizers.append(VisualizationMarkers(self.cfg.torque_visualizer_cfg.replace(
+                        prim_path="/Visuals/Action/torque/" + name)))
             # set their visibility to true
-            self.force_visualizer.set_visibility(True)
-            self.torque_visualizer.set_visibility(True)
+            for visualizer in self.force_visualizers:
+                visualizer.set_visibility(True)
+            for visualizer in self.torque_visualizers:
+                visualizer.set_visibility(True)
+
         else:
-            if hasattr(self, "torque_visualizer"):
-                self.force_visualizer.set_visibility(False)
-                self.torque_visualizer.set_visibility(False)
+            if hasattr(self, "force_visualizers"):
+                for visualizer in self.force_visualizers:
+                    visualizer.set_visibility(False)
+                for visualizer in self.torque_visualizers:
+                    visualizer.set_visibility(False)
 
     def _debug_vis_callback(self, event):
         if not self._asset.is_initialized:
             return
-        force_arrow_scale, force_arrow_quat = self._resolve_3d_vector_to_arrow(
-            quat_rotate(self._asset.data.body_state_w[:, self._body_idx, 3:7],
-                        self._wrench_b[:, :3]) / self.cfg.force_scale)
-        torque_arrow_scale, torque_arrow_quat = self._resolve_3d_vector_to_arrow(
-            quat_rotate(self._asset.data.body_state_w[:, self._body_idx, 3:7],
-                        self._wrench_b[:, 3:]) / self.cfg.torque_scale)
-        pos = self._asset.data.body_state_w[:, self._body_idx, :3].clone()
-        self.force_visualizer.visualize(
-            pos, force_arrow_quat, force_arrow_scale
-        )
-        self.torque_visualizer.visualize(
-            pos, torque_arrow_quat, torque_arrow_scale
-        )
+
+        for i in range(self._num_bodies):
+            force_arrow_scale, force_arrow_quat = self._resolve_3d_vector_to_arrow(
+                quat_rotate(self._asset.data.body_state_w[:, self._body_indexes[i], 3:7],
+                            self._wrenches_b[:, i, :3]) / self.cfg.force_scale)
+            torque_arrow_scale, torque_arrow_quat = self._resolve_3d_vector_to_arrow(
+                quat_rotate(self._asset.data.body_state_w[:, self._body_indexes[i], 3:7],
+                            self._wrenches_b[:, i, 3:]) / self.cfg.torque_scale)
+            pos = self._asset.data.body_state_w[:, self._body_indexes[i], :3].clone()
+            self.force_visualizers[i].visualize(pos, force_arrow_quat, force_arrow_scale)
+            self.torque_visualizers[i].visualize(pos, torque_arrow_quat, torque_arrow_scale)
 
     def _resolve_3d_vector_to_arrow(self, vec: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         # obtain default scale of the marker
@@ -123,7 +133,7 @@ class WrenchAction(ActionTerm):
 class WrenchActionCfg(ActionTermCfg):
     class_type: type[ActionTerm] = WrenchAction
 
-    body_name: str = MISSING
+    body_names: list[str] = MISSING
 
     force_scale: float = MISSING
 
