@@ -90,7 +90,8 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        base_ori = ObsTerm(func=mdp.root_quat_w)
+        base_pos_z = ObsTerm(func=mdp.base_pos_z)
+        projected_gravity = ObsTerm(func=mdp.projected_gravity)
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
         joint_pos = ObsTerm(func=mdp.joint_pos_rel)
@@ -148,8 +149,8 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    root_pos = RewTerm(func=mdp.root_pos_exp, weight=1.0, params={"command_name": "real_traj", "std": math.sqrt(0.1)})
-    root_ori = RewTerm(func=mdp.root_ori_exp, weight=0.5, params={"command_name": "real_traj", "std": math.sqrt(0.3)})
+    root_pos = RewTerm(func=mdp.root_pos_exp, weight=1.0, params={"command_name": "real_traj", "std": math.sqrt(0.05)})
+    root_ori = RewTerm(func=mdp.root_ori_exp, weight=0.5, params={"command_name": "real_traj", "std": math.sqrt(0.05)})
     root_lin_vel = RewTerm(func=mdp.root_lin_vel_exp, weight=1.0,
                            params={"command_name": "real_traj", "std": math.sqrt(0.1)})
     root_ang_vel = RewTerm(func=mdp.root_ang_vel_exp, weight=0.5,
@@ -157,7 +158,7 @@ class RewardsCfg:
     joint_pos = RewTerm(func=mdp.joint_pos_exp, weight=0.5, params={"command_name": "real_traj", "std": math.sqrt(0.3)})
     joint_vel = RewTerm(func=mdp.joint_vel_exp, weight=0.5, params={"command_name": "real_traj", "std": math.sqrt(2.0)})
 
-    termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
+    action = RewTerm(func=mdp.action_l2, weight=-1e-3)
 
 
 @configclass
@@ -167,13 +168,13 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     traj_end = DoneTerm(func=mdp.traj_end, params={"command_name": "real_traj"}, time_out=True)
 
-    ref_pos = DoneTerm(
-        func=mdp.bad_ref_pos,
-        params={"command_name": "real_traj", "threshold": 0.5},
+    bad_pos = DoneTerm(
+        func=mdp.bad_pos,
+        params={"command_name": "real_traj", "threshold": 0.3},
     )
-    ref_ori = DoneTerm(
-        func=mdp.bad_ref_ori,
-        params={"asset_cfg": SceneEntityCfg("robot"), "command_name": "real_traj", "threshold": 0.8},
+    bad_ori = DoneTerm(
+        func=mdp.bad_ori,
+        params={"command_name": "real_traj", "threshold": 0.2},
     )
 
 
