@@ -70,7 +70,8 @@ class CommandsCfg:
 
     motion = mdp.MotionCommandCfg(asset_name="robot",
                                   resampling_time_range=(1.0e9, 1.0e9), debug_vis=True,
-                                  pose_range={"x": (-0.3, 0.3), "y": (-0.3, 0.3), "yaw": (-1.57, 1.57)})
+                                  pose_range={"roll": (-0.2, 0.2), "pitch": (-0.2, 0.2), "yaw": (-1.57, 1.57)},
+                                  velocity_range={"x": (-0.5, 0.5), "y": (-0.5, 0.5)})
 
 
 @configclass
@@ -90,7 +91,7 @@ class ObservationsCfg:
 
         # observation terms (order preserved)
         command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"})
-        ref_ori_w = ObsTerm(func=mdp.robot_ref_ori_w, params={"command_name": "motion"},
+        robot_ori_w = ObsTerm(func=mdp.robot_ref_ori_w, params={"command_name": "motion"},
                             noise=Unoise(n_min=-0.05, n_max=0.05))
         body_pos = ObsTerm(func=mdp.robot_body_pos_b, params={"command_name": "motion"},
                            noise=Unoise(n_min=-0.05, n_max=0.05))
@@ -106,8 +107,22 @@ class ObservationsCfg:
             self.enable_corruption = True
             self.concatenate_terms = True
 
+    @configclass
+    class PrivilegedCfg(ObsGroup):
+        command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"})
+        motion_pos_b = ObsTerm(func=mdp.motion_ref_pos_b, params={"command_name": "motion"})
+        motion_ori_b = ObsTerm(func=mdp.motion_ref_ori_b, params={"command_name": "motion"})
+        body_pos = ObsTerm(func=mdp.robot_body_pos_b, params={"command_name": "motion"})
+        body_ori = ObsTerm(func=mdp.robot_body_ori_b, params={"command_name": "motion"})
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
+        base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
+        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel)
+        actions = ObsTerm(func=mdp.last_action)
+
     # observation groups
     policy: PolicyCfg = PolicyCfg()
+    critic: PrivilegedCfg = PrivilegedCfg()
 
 
 @configclass

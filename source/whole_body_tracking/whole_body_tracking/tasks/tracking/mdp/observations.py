@@ -53,3 +53,25 @@ def robot_body_ori_b(env: ManagerBasedEnv, command_name: str) -> torch.Tensor:
     )
 
     return ori_b.view(env.num_envs, -1)
+
+
+def motion_ref_pos_b(env: ManagerBasedEnv, command_name: str) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+
+    pos, _ = subtract_frame_transforms(
+        command.robot_ref_pose_w[:, :3], command.robot_ref_pose_w[:, 3:7],
+        command.motion_ref_pose_w[:, :3], command.motion_ref_pose_w[:, 3:7],
+    )
+
+    return pos.view(env.num_envs, -1)
+
+
+def motion_ref_ori_b(env: ManagerBasedEnv, command_name: str) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+
+    _, ori = subtract_frame_transforms(
+        command.robot_ref_pose_w[:, :3], command.robot_ref_pose_w[:, 3:7],
+        command.motion_ref_pose_w[:, :3], command.motion_ref_pose_w[:, 3:7],
+    )
+
+    return ori.view(env.num_envs, -1)

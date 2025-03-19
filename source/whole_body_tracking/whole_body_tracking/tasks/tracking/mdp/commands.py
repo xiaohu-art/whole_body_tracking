@@ -57,23 +57,7 @@ class MotionCommand(CommandTerm):
 
     @property
     def command(self) -> torch.Tensor:  # TODO Consider again if this is the best observation
-        motion_ref_pos_b, motion_ref_ori_b = subtract_frame_transforms(
-            self.robot_ref_pose_w[:, :3], self.robot_ref_pose_w[:, 3:7],
-            self.motion_ref_pose_w[:, :3], self.motion_ref_pose_w[:, 3:7],
-        )
-
-        num_bodies = len(self.cfg.body_names)
-        motion_body_pos_b, motion_body_ori_b = subtract_frame_transforms(
-            self.robot_ref_pose_w[:, None, :3].repeat(1, num_bodies, 1),
-            self.robot_ref_pose_w[:, None, 3:7].repeat(1, num_bodies, 1),
-            self.motion_body_pose_w[:, :, :3],
-            self.motion_body_pose_w[:, :, 3:7],
-        )
-
         return torch.cat([
-            motion_ref_pos_b,
-            motion_ref_ori_b,
-            motion_body_pos_b.view(self.num_envs, -1),
             self.motion_joint_pos,
             self.motion_joint_vel
         ], dim=1)

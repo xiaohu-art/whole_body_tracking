@@ -25,6 +25,8 @@ This repository serves as a template for building projects or extensions based o
 
 - Clone this repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
 
+- **This repo uses git-lfs to store usd. You need to install [git-lfs](https://git-lfs.com/)**. 
+
 ```bash
 # Option 1: HTTPS
 git clone https://github.com/isaac-sim/IsaacLabExtensionTemplate.git
