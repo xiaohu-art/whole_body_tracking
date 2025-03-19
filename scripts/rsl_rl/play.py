@@ -84,7 +84,27 @@ def main():
     # wrap around environment for rsl-rl
     env = RslRlVecEnvWrapper(env)
 
-    print(f"[INFO]: Loading model checkpoint from: {resume_path}")
+    if args_cli.wandb_path:
+        import wandb
+        run_path = args_cli.wandb_path
+        # path = 'model_4000.pt'
+        api = wandb.Api()
+        wandb_run = api.run(run_path)
+        # loop over files in the run
+        files = [file.name for file in wandb_run.files() if 'model' in file.name]
+        # files are all model_xxx.pt find the largest filename
+        if 'model' in args_cli.wandb_path:
+            file = args_cli.wandb_path.split('/')[-1]
+        else:
+            file = max(files, key=lambda x: int(x.split('_')[1].split('.')[0]))
+
+        wandb_file = wandb_run.file(str(file))
+        wandb_file.download(f"./outputs/temp", replace=True)
+
+        print(f"[INFO]: Loading model checkpoint from: {run_path}/{file}")
+        resume_path = f"./outputs/temp/{file}"
+    else:
+        print(f"[INFO]: Loading model checkpoint from: {resume_path}")
     # load previously trained model
     ppo_runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     ppo_runner.load(resume_path)
