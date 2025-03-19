@@ -30,7 +30,7 @@ def motion_global_root_position_error_exp(env: ManagerBasedRLEnv, command_name: 
 def motion_global_root_orientation_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
-    return quat_error_magnitude(command.motion_ref_pose_w[:, 3:7], command.robot_ref_pose_w[:, 3:7]).pow(2).mean(-1)
+    return quat_error_magnitude(command.motion_ref_pose_w[:, 3:7], command.robot_ref_pose_w[:, 3:7]).pow(2)
 
 
 def motion_global_root_lin_vel_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
