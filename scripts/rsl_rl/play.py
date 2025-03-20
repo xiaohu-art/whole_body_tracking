@@ -59,12 +59,36 @@ def main():
     # specify directory for logging experiments
     log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
     log_root_path = os.path.abspath(log_root_path)
-    print(f"[INFO] Loading experiment from directory: {log_root_path}")
-    resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
-    log_dir = os.path.dirname(resume_path)
 
     # create isaac environment
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
+
+    if args_cli.wandb_path:
+        import wandb
+        run_path = args_cli.wandb_path
+
+        api = wandb.Api()
+        wandb_run = api.run(run_path)
+        # loop over files in the run
+        files = [file.name for file in wandb_run.files() if 'model' in file.name]
+        # files are all model_xxx.pt find the largest filename
+        if 'model' in args_cli.wandb_path:
+            file = args_cli.wandb_path.split('/')[-1]
+        else:
+            file = max(files, key=lambda x: int(x.split('_')[1].split('.')[0]))
+
+        wandb_file = wandb_run.file(str(file))
+        wandb_file.download(f"./logs/rsl_rl/temp", replace=True)
+
+        print(f"[INFO]: Loading model checkpoint from: {run_path}/{file}")
+        resume_path = f"./logs/rsl_rl/temp/{file}"
+    else:
+        print(f"[INFO] Loading experiment from directory: {log_root_path}")
+        resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
+        print(f"[INFO]: Loading model checkpoint from: {resume_path}")
+    
+    log_dir = os.path.dirname(resume_path)
+
     # wrap for video recording
     if args_cli.video:
         video_kwargs = {
@@ -84,27 +108,6 @@ def main():
     # wrap around environment for rsl-rl
     env = RslRlVecEnvWrapper(env)
 
-    if args_cli.wandb_path:
-        import wandb
-        run_path = args_cli.wandb_path
-        # path = 'model_4000.pt'
-        api = wandb.Api()
-        wandb_run = api.run(run_path)
-        # loop over files in the run
-        files = [file.name for file in wandb_run.files() if 'model' in file.name]
-        # files are all model_xxx.pt find the largest filename
-        if 'model' in args_cli.wandb_path:
-            file = args_cli.wandb_path.split('/')[-1]
-        else:
-            file = max(files, key=lambda x: int(x.split('_')[1].split('.')[0]))
-
-        wandb_file = wandb_run.file(str(file))
-        wandb_file.download(f"./outputs/temp", replace=True)
-
-        print(f"[INFO]: Loading model checkpoint from: {run_path}/{file}")
-        resume_path = f"./outputs/temp/{file}"
-    else:
-        print(f"[INFO]: Loading model checkpoint from: {resume_path}")
     # load previously trained model
     ppo_runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     ppo_runner.load(resume_path)
