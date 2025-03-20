@@ -189,16 +189,16 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
     motion_global_root_pos = RewTerm(
-        func=mdp.motion_global_root_position_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.1)},
+        func=mdp.motion_global_ref_position_error_exp, weight=0.5,
+        params={"command_name": "motion", "std": math.sqrt(0.25)},
     )
     motion_global_root_ori = RewTerm(
-        func=mdp.motion_global_root_orientation_error_exp, weight=0.3,
-        params={"command_name": "motion", "std": math.sqrt(0.1)},
+        func=mdp.motion_global_ref_orientation_error_exp, weight=0.3,
+        params={"command_name": "motion", "std": math.sqrt(0.5)},
     )
     motion_global_body_pos = RewTerm(
         func=mdp.motion_global_body_position_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.1)},
+        params={"command_name": "motion", "std": math.sqrt(0.25)},
     )
     motion_joint_pos = RewTerm(
         func=mdp.motion_joint_pos_error, weight=-1e-0, params={"command_name": "motion"},
