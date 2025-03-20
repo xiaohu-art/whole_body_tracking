@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import MISSING
+import math
 
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg
@@ -188,13 +189,16 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
     motion_global_root_pos = RewTerm(
-        func=mdp.motion_global_root_position_error_exp, weight=0.5, params={"command_name": "motion", "std": 10},
+        func=mdp.motion_global_root_position_error_exp, weight=0.5,
+        params={"command_name": "motion", "std": math.sqrt(0.1)},
     )
     motion_global_root_ori = RewTerm(
-        func=mdp.motion_global_root_orientation_error, weight=0.3, params={"command_name": "motion"},
+        func=mdp.motion_global_root_orientation_error_exp, weight=0.3,
+        params={"command_name": "motion", "std": math.sqrt(0.1)},
     )
     motion_global_body_pos = RewTerm(
-        func=mdp.motion_global_body_position_error_exp, weight=0.5, params={"command_name": "motion", "std": 10},
+        func=mdp.motion_global_body_position_error_exp, weight=0.5,
+        params={"command_name": "motion", "std": math.sqrt(0.1)},
     )
     motion_joint_pos = RewTerm(
         func=mdp.motion_joint_pos_error, weight=-1e-0, params={"command_name": "motion"},
