@@ -143,47 +143,6 @@ class EventCfg:
         },
     )
 
-    add_base_mass = EventTerm(
-        func=mdp.randomize_rigid_body_mass,
-        mode="startup",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
-            "mass_distribution_params": (-3.0, 3.0),
-            "operation": "add",
-        },
-    )
-
-    scale_all_link_masses = EventTerm(
-        func=mdp.randomize_rigid_body_mass,
-        mode="startup",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "mass_distribution_params": (0.9, 1.1),
-            "operation": "scale",
-        },
-    )
-
-    # add_all_joint_default_pos = EventTerm(
-    #     func=mdp.randomize_joint_default_pos,
-    #     mode="startup",
-    #     params={
-    #         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]),
-    #         "pos_distribution_params": (-0.05, 0.05),
-    #         "operation": "add",
-    #     },
-    # )
-    #
-    # # reset
-    # base_external_force_torque = EventTerm(
-    #     func=mdp.apply_external_force_torque,
-    #     mode="reset",
-    #     params={
-    #         "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
-    #         "force_range": (-0.0, 0.0),
-    #         "torque_range": (-5.0, 5.0),
-    #     },
-    # )
-
 
 @configclass
 class RewardsCfg:
