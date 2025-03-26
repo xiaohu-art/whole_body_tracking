@@ -34,3 +34,8 @@ _isaac_sim*
 _repo
 _build
 .lastformat
+
+*.csv
+*.pkl
+*.zarr
+*.npz

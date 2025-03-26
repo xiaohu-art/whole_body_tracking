@@ -68,6 +68,8 @@ def main():
         run_path = args_cli.wandb_path
 
         api = wandb.Api()
+        if 'model' in args_cli.wandb_path:
+            run_path = '/'.join(args_cli.wandb_path.split('/')[:-1])
         wandb_run = api.run(run_path)
         # loop over files in the run
         files = [file.name for file in wandb_run.files() if 'model' in file.name]
