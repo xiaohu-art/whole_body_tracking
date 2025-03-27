@@ -92,6 +92,8 @@ class ObservationsCfg:
 
         # observation terms (order preserved)
         command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"})
+        motion_pos_b = ObsTerm(func=mdp.motion_ref_pos_b, params={"command_name": "motion"},
+                               noise=Unoise(n_min=-0.05, n_max=0.05))
         robot_ori_w = ObsTerm(func=mdp.robot_ref_ori_w, params={"command_name": "motion"},
                             noise=Unoise(n_min=-0.05, n_max=0.05))
         body_pos = ObsTerm(func=mdp.robot_body_pos_b, params={"command_name": "motion"},
