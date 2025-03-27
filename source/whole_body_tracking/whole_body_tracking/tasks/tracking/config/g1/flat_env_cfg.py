@@ -72,3 +72,17 @@ class G1FlatMoonWalkEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_moonwalk.npz"
+
+
+@configclass
+class G1FlatRunEnvCfg(HumanoidFlatEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_run.npz"
+
+
+@configclass
+class G1FlatKungfuEnvCfg(HumanoidFlatEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_kungfu.npz"
