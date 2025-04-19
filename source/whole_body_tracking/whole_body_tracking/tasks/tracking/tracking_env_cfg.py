@@ -92,6 +92,8 @@ class ObservationsCfg:
 
         # observation terms (order preserved)
         command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"})
+        motion_pos_b = ObsTerm(func=mdp.motion_ref_pos_b, params={"command_name": "motion"},
+                               noise=Unoise(n_min=-0.05, n_max=0.05))
         robot_ori_w = ObsTerm(func=mdp.robot_ref_ori_w, params={"command_name": "motion"},
                             noise=Unoise(n_min=-0.05, n_max=0.05))
         body_pos = ObsTerm(func=mdp.robot_body_pos_b, params={"command_name": "motion"},
@@ -143,62 +145,21 @@ class EventCfg:
         },
     )
 
-    add_base_mass = EventTerm(
-        func=mdp.randomize_rigid_body_mass,
-        mode="startup",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
-            "mass_distribution_params": (-3.0, 3.0),
-            "operation": "add",
-        },
-    )
-
-    scale_all_link_masses = EventTerm(
-        func=mdp.randomize_rigid_body_mass,
-        mode="startup",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "mass_distribution_params": (0.9, 1.1),
-            "operation": "scale",
-        },
-    )
-
-    # add_all_joint_default_pos = EventTerm(
-    #     func=mdp.randomize_joint_default_pos,
-    #     mode="startup",
-    #     params={
-    #         "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]),
-    #         "pos_distribution_params": (-0.05, 0.05),
-    #         "operation": "add",
-    #     },
-    # )
-    #
-    # # reset
-    # base_external_force_torque = EventTerm(
-    #     func=mdp.apply_external_force_torque,
-    #     mode="reset",
-    #     params={
-    #         "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
-    #         "force_range": (-0.0, 0.0),
-    #         "torque_range": (-5.0, 5.0),
-    #     },
-    # )
-
 
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
     motion_global_root_pos = RewTerm(
-        func=mdp.motion_global_root_position_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.1)},
+        func=mdp.motion_global_ref_position_error_exp, weight=0.5,
+        params={"command_name": "motion", "std": math.sqrt(0.25)},
     )
     motion_global_root_ori = RewTerm(
-        func=mdp.motion_global_root_orientation_error_exp, weight=0.3,
-        params={"command_name": "motion", "std": math.sqrt(0.1)},
+        func=mdp.motion_global_ref_orientation_error_exp, weight=0.3,
+        params={"command_name": "motion", "std": math.sqrt(0.5)},
     )
     motion_global_body_pos = RewTerm(
         func=mdp.motion_global_body_position_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.1)},
+        params={"command_name": "motion", "std": math.sqrt(0.25)},
     )
     motion_joint_pos = RewTerm(
         func=mdp.motion_joint_pos_error, weight=-1e-0, params={"command_name": "motion"},

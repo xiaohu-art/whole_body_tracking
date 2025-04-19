@@ -13,7 +13,6 @@ from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
 from isaaclab.markers.config import FRAME_MARKER_CFG
 from isaaclab.utils import configclass
 import isaaclab.utils.math as math_utils
-from isaaclab.utils.math import subtract_frame_transforms
 from isaaclab_tasks.direct.humanoid_amp.motions import MotionLoader
 
 if TYPE_CHECKING:
@@ -54,6 +53,8 @@ class MotionCommand(CommandTerm):
         self.metrics["error_ref_ang_vel"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["error_body_pos"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["error_body_rot"] = torch.zeros(self.num_envs, device=self.device)
+        self.metrics["error_joint_pos"] = torch.zeros(self.num_envs, device=self.device)
+        self.metrics["error_joint_vel"] = torch.zeros(self.num_envs, device=self.device)
 
     @property
     def command(self) -> torch.Tensor:  # TODO Consider again if this is the best observation
@@ -87,24 +88,21 @@ class MotionCommand(CommandTerm):
         return self.robot.data.joint_vel[:, self.robot_joint_indexes]
 
     def _update_metrics(self):
-        self.metrics["error_ref_pos"] = torch.norm(
-            self.motion_ref_pose_w[:, :3] - self.robot_ref_pose_w[:, :3], dim=1)
-        self.metrics["error_ref_rot"] = torch.norm(
-            self.motion_ref_pose_w[:, 3:7] - self.robot_ref_pose_w[:, 3:7], dim=1)
+        self.metrics["error_ref_pos"] = torch.norm(self.motion_ref_pose_w[:, :3] - self.robot_ref_pose_w[:, :3], dim=-1)
+        self.metrics["error_ref_rot"] = math_utils.quat_error_magnitude(
+            self.motion_ref_pose_w[:, 3:7], self.robot_ref_pose_w[:, 3:7])
         self.metrics["error_ref_lin_vel"] = torch.norm(
-            self.motion_ref_vel_w[:, :3] - self.robot_ref_vel_w[:, :3], dim=1)
+            self.motion_ref_vel_w[:, :3] - self.robot_ref_vel_w[:, :3], dim=-1)
         self.metrics["error_ref_ang_vel"] = torch.norm(
-            self.motion_ref_vel_w[:, 3:] - self.robot_ref_vel_w[:, 3:], dim=1)
+            self.motion_ref_vel_w[:, 3:] - self.robot_ref_vel_w[:, 3:], dim=-1)
 
         self.metrics["error_body_pos"] = torch.norm(
-            self.motion_body_pose_w[:, :, :3] - self.robot_body_pose_w[:, :, :3], dim=2).mean(dim=1)
-        self.metrics["error_body_rot"] = torch.norm(
-            self.motion_body_pose_w[:, :, 3:7] - self.robot_body_pose_w[:, :, 3:7], dim=2).mean(dim=1)
+            self.motion_body_pose_w[:, :, :3] - self.robot_body_pose_w[:, :, :3], dim=2).mean(dim=-1)
+        self.metrics["error_body_rot"] = math_utils.quat_error_magnitude(
+            self.motion_body_pose_w[:, :, 3:7], self.robot_body_pose_w[:, :, 3:7]).mean(dim=-1)
 
-        self.metrics["error_joint_pos"] = torch.norm(
-            self.motion_joint_pos - self.robot_joint_pos, dim=1)
-        self.metrics["error_joint_vel"] = torch.norm(
-            self.motion_joint_vel - self.robot_joint_vel, dim=1)
+        self.metrics["error_joint_pos"] = torch.norm(self.motion_joint_pos - self.robot_joint_pos, dim=-1)
+        self.metrics["error_joint_vel"] = torch.norm(self.motion_joint_vel - self.robot_joint_vel, dim=-1)
 
     def _resample_command(self, env_ids: Sequence[int]):
         self.motion_times[env_ids.cpu()] = self.motion.sample_times(num_samples=len(env_ids))
