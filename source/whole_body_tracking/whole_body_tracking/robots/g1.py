@@ -89,9 +89,17 @@ G1_CYLINDER_CFG = ArticulationCfg(
             armature={".*_ankle_pitch_joint": 0.00721945, ".*_ankle_roll_joint": 0.00721945},
         ),
         "waist": ImplicitActuatorCfg(
+            effort_limit=50,
+            velocity_limit=32.0,
+            joint_names_expr=["waist_roll_joint", "waist_pitch_joint"],
+            stiffness=75.0,
+            damping=2.0,
+            armature=0.00721945,
+        ),
+        "waist_yaw": ImplicitActuatorCfg(
             effort_limit=88,
             velocity_limit=32.0,
-            joint_names_expr=["waist_yaw_joint", "waist_roll_joint", "waist_pitch_joint"],
+            joint_names_expr=["waist_yaw_joint"],
             stiffness=75.0,
             damping=2.0,
             armature=0.01017752004,
