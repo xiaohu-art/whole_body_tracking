@@ -69,9 +69,9 @@ class MySceneCfg(InteractiveSceneCfg):
 class CommandsCfg:
     """Command specifications for the MDP."""
 
-    right_foot_pose = mdp.InvariantUniformPoseCommandCfg(
+    left_foot_pose = mdp.InvariantUniformPoseCommandCfg(
         asset_name="robot",
-        body_name="right_ankle_roll_link",
+        body_name="left_ankle_roll_link",
         resampling_time_range=(4.0, 4.0),
         debug_vis=True,
         ranges=mdp.InvariantUniformPoseCommandCfg.Ranges(
@@ -107,7 +107,7 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-0.5, n_max=0.5))
         actions = ObsTerm(func=mdp.last_action)
-        pose_command = ObsTerm(func=mdp.generated_commands, params={"command_name": "right_foot_pose"})
+        pose_command = ObsTerm(func=mdp.generated_commands, params={"command_name": "left_foot_pose"})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -162,20 +162,26 @@ class EventCfg:
 
 @configclass
 class RewardsCfg:
-    right_foot_position = RewTerm(func=mdp.position_command_error, weight=-1.0,
-                                  params={"command_name": "right_foot_pose",
-                                          "asset_cfg": SceneEntityCfg("robot", body_names="right_ankle_roll_link")})
-    right_foot_air_time = RewTerm(func=mdp.feet_air_time, weight=0.1, params={
-        "sensor_cfg": SceneEntityCfg("contact_forces", body_names="right_ankle_roll_link"),
+    left_foot_position = RewTerm(func=mdp.position_command_error, weight=-1.0,
+                                 params={"command_name": "left_foot_pose",
+                                         "asset_cfg": SceneEntityCfg("robot", body_names="left_ankle_roll_link")})
+    left_foot_air_time = RewTerm(func=mdp.feet_air_time, weight=0.1, params={
+        "sensor_cfg": SceneEntityCfg("contact_forces", body_names="left_ankle_roll_link"),
         "threshold": 0.5,
     })
 
     joint_deviation = RewTerm(
         func=mdp.joint_deviation_l1,
         weight=-0.1,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["^(?!right_(?:hip|knee|ankle)).*_joint$"])}
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["^(?!left_(?:hip|knee|ankle)).*_joint$"])}
     )
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
+    # joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-1e-3,
+    #                        params={"asset_cfg": SceneEntityCfg("robot",
+    #                                                            joint_names=["^(?!left_(?:hip|knee|ankle)).*_joint$"])})
+    joint_vel_l2 = RewTerm(func=mdp.joint_vel_l2, weight=-1e-3,
+                           params={"asset_cfg": SceneEntityCfg("robot")})
+
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-1.0,
                                   params={"asset_cfg": SceneEntityCfg("robot", body_names="torso_link")})
     termination = RewTerm(func=mdp.is_terminated, weight=-100.0)
@@ -186,7 +192,7 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
     bad_body_vel = DoneTerm(func=mdp.bad_body_vel,
                             params={"threshold": 1.0,
-                                    "asset_cfg": SceneEntityCfg("robot", body_names="left_ankle_roll_link")})
+                                    "asset_cfg": SceneEntityCfg("robot", body_names="right_ankle_roll_link")})
 
     bad_orientation = DoneTerm(
         func=mdp.bad_orientation,
