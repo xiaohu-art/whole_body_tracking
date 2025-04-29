@@ -23,6 +23,6 @@ def feet_air_time(
     """
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     current_air_time = contact_sensor.data.current_air_time[:, sensor_cfg.body_ids]
-    # reward = torch.clip(torch.sum((current_air_time - threshold), dim=1), max=2.0)
-    reward = torch.sum((current_air_time - threshold), dim=1)
+    reward = torch.clip(torch.sum((current_air_time - threshold), dim=1), max=2.0)
+    # reward = torch.sum((current_air_time - threshold), dim=1)
     return reward

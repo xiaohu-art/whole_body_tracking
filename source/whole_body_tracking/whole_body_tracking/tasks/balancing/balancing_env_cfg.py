@@ -121,7 +121,6 @@ class ObservationsCfg:
 class EventCfg:
     """Configuration for events."""
 
-    # startup
     physics_material = EventTerm(
         func=mdp.randomize_rigid_body_material,
         mode="startup",
@@ -131,6 +130,36 @@ class EventCfg:
             "dynamic_friction_range": (0.3, 1.0),
             "restitution_range": (0.0, 0.5),
             "num_buckets": 64,
+        },
+    )
+
+    scale_all_link_masses = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
+            "mass_distribution_params": (0.9, 1.1),
+            "operation": "scale",
+        },
+    )
+
+    add_base_mass = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
+            "mass_distribution_params": (-1.0, 1.0),
+            "operation": "add",
+        },
+    )
+
+    add_joint_default_pos = EventTerm(
+        func=mdp.randomize_joint_default_pos,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]),
+            "pos_distribution_params": (-0.05, 0.05),
+            "operation": "add",
         },
     )
 
