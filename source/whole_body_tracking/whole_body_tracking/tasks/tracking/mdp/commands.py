@@ -136,8 +136,13 @@ class MotionCommand(CommandTerm):
 
         joint_pos = self.robot.data.default_joint_pos[env_ids].clone()
         joint_vel = self.robot.data.default_joint_vel[env_ids].clone()
+        soft_joint_pos_limits = 0.9 * self.robot.data.soft_joint_pos_limits[env_ids].clone()
         joint_pos[:, self.robot_joint_indexes] = motion_joint_pos[:, self.motion_joint_indexes]
         joint_vel[:, self.robot_joint_indexes] = motion_joint_vel[:, self.motion_joint_indexes]
+        joint_pos[:, self.robot_joint_indexes] = torch.clip(joint_pos[:, self.robot_joint_indexes],
+            soft_joint_pos_limits[:, self.robot_joint_indexes, 0],
+            soft_joint_pos_limits[:, self.robot_joint_indexes, 1]
+        )
         self.robot.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
         self.robot.write_root_state_to_sim(root_states, env_ids=env_ids)
 
