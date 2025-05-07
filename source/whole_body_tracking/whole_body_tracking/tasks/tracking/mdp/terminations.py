@@ -30,3 +30,13 @@ def bad_ref_ori(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg, command_name:
                                                                asset.data.GRAVITY_VEC_W)
 
     return (motion_projected_gravity_b[:, 2] - robot_projected_gravity_b[:, 2]).abs() > threshold
+
+
+def bh_joint_pos_out_of_limit(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Terminate when the asset's joint positions are outside of the soft joint limits."""
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    # compute any violations
+    out_of_upper_limits = torch.any(asset.data.joint_pos[:, asset_cfg.joint_ids] > asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids, 1], dim=1)
+    out_of_lower_limits = torch.any(asset.data.joint_pos[:, asset_cfg.joint_ids] < asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids, 0], dim=1)
+    return torch.logical_or(out_of_upper_limits, out_of_lower_limits)

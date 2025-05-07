@@ -184,6 +184,10 @@ class TerminationsCfg:
         func=mdp.bad_ref_ori,
         params={"asset_cfg": SceneEntityCfg("robot"), "command_name": "motion", "threshold": 0.8},
     )
+    joint_limit = DoneTerm(
+        func=mdp.bh_joint_pos_out_of_limit,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_ankle_.*_joint", ".*waist_.*_joint"])},
+    )
 
 
 @configclass
