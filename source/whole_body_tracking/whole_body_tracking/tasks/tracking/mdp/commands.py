@@ -136,9 +136,12 @@ class MotionCommand(CommandTerm):
 
         joint_pos = self.robot.data.default_joint_pos[env_ids].clone()
         joint_vel = self.robot.data.default_joint_vel[env_ids].clone()
-        soft_joint_pos_limits = 0.9 * self.robot.data.soft_joint_pos_limits[env_ids].clone()
+
         joint_pos[:, self.robot_joint_indexes] = motion_joint_pos[:, self.motion_joint_indexes]
         joint_vel[:, self.robot_joint_indexes] = motion_joint_vel[:, self.motion_joint_indexes]
+
+        joint_pos += math_utils.sample_uniform(*self.cfg.joint_position_range, joint_pos.shape, joint_pos.device)
+        soft_joint_pos_limits = self.robot.data.soft_joint_pos_limits[env_ids]
         joint_pos[:, self.robot_joint_indexes] = torch.clip(joint_pos[:, self.robot_joint_indexes],
             soft_joint_pos_limits[:, self.robot_joint_indexes, 0],
             soft_joint_pos_limits[:, self.robot_joint_indexes, 1]
@@ -233,6 +236,8 @@ class MotionCommandCfg(CommandTermCfg):
 
     pose_range: dict[str, tuple[float, float]] = {}
     velocity_range: dict[str, tuple[float, float]] = {}
+
+    joint_position_range: tuple[float, float] = (-0.52, 0.52)
 
     ref_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
     ref_visualizer_cfg.markers["frame"].scale = (0.2, 0.2, 0.2)
