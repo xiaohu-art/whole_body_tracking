@@ -145,6 +145,16 @@ class EventCfg:
         },
     )
 
+    add_joint_default_pos = EventTerm(
+        func=mdp.randomize_joint_default_pos,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]),
+            "pos_distribution_params": (-0.05, 0.05),
+            "operation": "add",
+        },
+    )
+
 
 @configclass
 class RewardsCfg:
