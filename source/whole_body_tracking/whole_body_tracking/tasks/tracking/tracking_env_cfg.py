@@ -71,7 +71,7 @@ class CommandsCfg:
 
     motion = mdp.MotionCommandCfg(asset_name="robot",
                                   resampling_time_range=(1.0e9, 1.0e9), debug_vis=True,
-                                  pose_range={"roll": (-0.2, 0.2), "pitch": (-0.2, 0.2), "yaw": (-1.57, 1.57)},
+                                  pose_range={"roll": (-0.2, 0.2), "pitch": (-0.2, 0.2), "yaw": (-0.78, 0.78)},
                                   velocity_range={"x": (-0.5, 0.5), "y": (-0.5, 0.5)})
 
 
