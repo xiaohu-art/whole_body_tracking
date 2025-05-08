@@ -86,3 +86,10 @@ class G1FlatKungfuEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_kungfu.npz"
+
+
+@configclass
+class G1FlatGetupEnvCfg(HumanoidFlatEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_getup.npz"
