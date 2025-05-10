@@ -117,7 +117,6 @@ class MotionCommand(CommandTerm):
         ) = self.motion.sample(num_samples=len(env_ids), times=self.motion_times[env_ids.cpu()])
         root_states = self.robot.data.default_root_state[env_ids].clone()
         root_states[:, :3] = motion_body_pos[:, 0]
-        root_states[:, 2] += 0.05
         root_states[:, :2] += self.motion_offset_pos[env_ids, :2]
         root_states[:, 3:7] = motion_body_rot[:, 0]
         root_states[:, 7:10] = motion_body_lin_vel[:, 0]
