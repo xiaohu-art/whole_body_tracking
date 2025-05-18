@@ -5,8 +5,8 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, R
 @configclass
 class G1FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 5000
-    save_interval = 50
+    max_iterations = 20000
+    save_interval = 500
     experiment_name = "g1_flat"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
