@@ -178,6 +178,10 @@ class RewardsCfg:
         func=mdp.motion_joint_vel_error, weight=-1e-1, params={"command_name": "motion"},
     )
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-3)
+    joint_limit = RewTerm(
+        func=mdp.joint_pos_limits, weight=-100.0,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_ankle_.*_joint", ".*waist_.*_joint"])},
+    )
     termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
 
 
@@ -193,10 +197,6 @@ class TerminationsCfg:
     ref_ori = DoneTerm(
         func=mdp.bad_ref_ori,
         params={"asset_cfg": SceneEntityCfg("robot"), "command_name": "motion", "threshold": 0.8},
-    )
-    joint_limit = DoneTerm(
-        func=mdp.bh_joint_pos_out_of_limit,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_ankle_.*_joint", ".*waist_.*_joint"])},
     )
 
 
