@@ -4,7 +4,7 @@ from typing import Optional, TYPE_CHECKING
 
 import torch
 
-from isaaclab.utils.math import quat_error_magnitude
+from isaaclab.utils.math import quat_error_magnitude, subtract_frame_transforms
 from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
 
 if TYPE_CHECKING:
@@ -43,6 +43,31 @@ def motion_global_body_position_error(env: ManagerBasedRLEnv, command_name: str,
 def motion_global_body_position_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
                                           body_names: Optional[list[str]] = None) -> torch.Tensor:
     return torch.exp(-motion_global_body_position_error(env, command_name, body_names) ** 2 / std ** 2)
+
+
+def motion_relative_body_position_error(env: ManagerBasedRLEnv, command_name: str,
+                                        body_names: list[str] | None) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    if body_names is None:
+        body_names = command.cfg.body_names
+    body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
+    robot_pos_b, _ = subtract_frame_transforms(
+        command.robot_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
+        command.robot_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
+        command.robot_body_pose_w[:, :, :3], command.robot_body_pose_w[:, :, 3:7],
+    )
+
+    motion_pos_b, _ = subtract_frame_transforms(
+        command.motion_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
+        command.motion_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
+        command.motion_body_pose_w[:, body_indexes, :3], command.motion_body_pose_w[:, body_indexes, 3:7],
+    )
+    return torch.norm(motion_pos_b - robot_pos_b, dim=-1).mean(-1)
+
+
+def motion_relative_body_position_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
+                                            body_names: Optional[list[str]] = None) -> torch.Tensor:
+    return torch.exp(-motion_relative_body_position_error(env, command_name, body_names) ** 2 / std ** 2)
 
 
 def motion_joint_pos_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:

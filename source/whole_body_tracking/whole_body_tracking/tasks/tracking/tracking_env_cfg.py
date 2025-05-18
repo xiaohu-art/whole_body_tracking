@@ -167,8 +167,8 @@ class RewardsCfg:
         func=mdp.motion_global_ref_orientation_error_exp, weight=0.3,
         params={"command_name": "motion", "std": math.sqrt(0.5)},
     )
-    motion_global_body_pos = RewTerm(
-        func=mdp.motion_global_body_position_error_exp, weight=0.5,
+    motion_body_pos = RewTerm(
+        func=mdp.motion_relative_body_position_error_exp, weight=0.5,
         params={"command_name": "motion", "std": math.sqrt(0.25)},
     )
     motion_joint_pos = RewTerm(
