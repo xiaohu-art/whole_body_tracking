@@ -71,8 +71,11 @@ class CommandsCfg:
 
     motion = mdp.MotionCommandCfg(asset_name="robot",
                                   resampling_time_range=(1.0e9, 1.0e9), debug_vis=True,
-                                  pose_range={"roll": (-0.2, 0.2), "pitch": (-0.2, 0.2), "yaw": (-0.78, 0.78)},
-                                  velocity_range={"x": (-0.5, 0.5), "y": (-0.5, 0.5)})
+                                  pose_range={"x": (-0.2, 0.2), "y": (-0.2, 0.2), "z": (-0.05, 0.05),
+                                              "roll": (-0.2, 0.2), "pitch": (-0.2, 0.2), "yaw": (-0.78, 0.78)},
+                                  velocity_range={"x": (-0.5, 0.5), "y": (-0.5, 0.5), "z": (-0.2, 0.2),
+                                                  "roll": (-0.52, 0.52), "pitch": (-0.52, 0.52),
+                                                  "yaw": (-0.78, 0.78)})
 
 
 @configclass
@@ -153,6 +156,16 @@ class EventCfg:
             "pos_distribution_params": (-0.05, 0.05),
             "operation": "add",
         },
+    )
+
+    # interval
+    push_robot = EventTerm(
+        func=mdp.push_by_setting_velocity,
+        mode="interval",
+        interval_range_s=(0.5, 1.0),
+        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "z": (-0.2, 0.2),
+                                   "roll": (-0.52, 0.52), "pitch": (-0.52, 0.52),
+                                   "yaw": (-0.78, 0.78)}},
     )
 
 
