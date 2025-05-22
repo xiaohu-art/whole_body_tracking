@@ -23,21 +23,6 @@ class HumanoidFlatEnvCfg(TrackingEnvCfg):
                                             'right_shoulder_pitch_joint', 'right_shoulder_roll_joint',
                                             'right_shoulder_yaw_joint', 'right_elbow_joint', 'right_wrist_roll_joint',
                                             'right_wrist_pitch_joint', 'right_wrist_yaw_joint']
-        # self.commands.motion.body_names = ['pelvis', 'left_hip_pitch_link', 'left_hip_roll_link',
-        #                                    'left_hip_yaw_link', 'left_knee_link', 'left_ankle_pitch_link',
-        #                                    'left_ankle_roll_link',
-        #                                    'right_hip_pitch_link', 'right_hip_roll_link', 'right_hip_yaw_link',
-        #                                    'right_knee_link',
-        #                                    'right_ankle_pitch_link', 'right_ankle_roll_link', 'waist_yaw_link',
-        #                                    'waist_roll_link', 'torso_link',
-        #                                    'left_shoulder_pitch_link', 'left_shoulder_roll_link',
-        #                                    'left_shoulder_yaw_link', 'left_elbow_link',
-        #                                    'left_wrist_roll_link', 'left_wrist_pitch_link', 'left_wrist_yaw_link',
-        #                                    'right_shoulder_pitch_link',
-        #                                    'right_shoulder_roll_link', 'right_shoulder_yaw_link', 'right_elbow_link',
-        #                                    'right_wrist_roll_link',
-        #                                    'right_wrist_pitch_link', 'right_wrist_yaw_link']
-
         self.commands.motion.body_names = ['pelvis',
                                            'left_hip_roll_link', 'left_knee_link', 'left_ankle_roll_link',
                                            'right_hip_roll_link', 'right_knee_link', 'right_ankle_roll_link',
@@ -51,7 +36,13 @@ class G1FlatWalkEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_walk_short.npz"
-
+        self.commands.motion.pose_range = {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.01, 0.01),
+                                           "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.2, 0.2)}
+        self.commands.motion.velocity_range = {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
+                                               "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}
+        self.events.push_robot.params = (
+            {"velocity_range": {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
+                                "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}})
 
 @configclass
 class G1FlatDanceEnvCfg(HumanoidFlatEnvCfg):
