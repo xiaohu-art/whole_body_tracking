@@ -41,8 +41,10 @@ class MotionCommand(CommandTerm):
         self.motion_offset_pos = env.scene.env_origins[:, :2]
 
         self.motion_ref_pose_w = torch.zeros(self.num_envs, 7, device=self.device)
+        self.motion_ref_pose_w[:, 3] = 1.0
         self.motion_ref_vel_w = torch.zeros(self.num_envs, 6, device=self.device)
         self.motion_body_pose_w = torch.zeros(self.num_envs, len(cfg.body_names), 7, device=self.device)
+        self.motion_body_pose_w[:, :, 3] = 1.0
         self.motion_body_vel_w = torch.zeros(self.num_envs, len(cfg.body_names), 6, device=self.device)
         self.motion_joint_pos = torch.zeros(self.num_envs, len(cfg.joint_names), device=self.device)
         self.motion_joint_vel = torch.zeros(self.num_envs, len(cfg.joint_names), device=self.device)
