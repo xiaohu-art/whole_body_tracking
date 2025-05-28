@@ -12,6 +12,7 @@ from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
+from isaaclab.sensors import ContactSensorCfg
 import isaaclab.sim as sim_utils
 from isaaclab.terrains import TerrainImporterCfg
 ##
@@ -58,7 +59,7 @@ class MySceneCfg(InteractiveSceneCfg):
         prim_path="/World/skyLight",
         spawn=sim_utils.DomeLightCfg(color=(0.13, 0.13, 0.13), intensity=1000.0),
     )
-
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
 
 ##
 # MDP settings
@@ -187,6 +188,10 @@ class RewardsCfg:
     motion_joint_vel = RewTerm(
         func=mdp.motion_joint_vel_error, weight=-1e-1, params={"command_name": "motion"},
     )
+    feet_contact_time = RewTerm(func=mdp.feet_contact_time, weight=-1.0, params={
+        "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_ankle_roll_link"]),
+        "threshold": 0.2,
+    })
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-1)
     joint_limit = RewTerm(
         func=mdp.joint_pos_limits, weight=-100.0,

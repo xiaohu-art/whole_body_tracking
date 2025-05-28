@@ -4,7 +4,10 @@ from typing import Optional, TYPE_CHECKING
 
 import torch
 
+from isaaclab.managers import SceneEntityCfg
+from isaaclab.sensors import ContactSensor
 from isaaclab.utils.math import quat_error_magnitude, subtract_frame_transforms
+
 from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
 
 if TYPE_CHECKING:
@@ -86,3 +89,10 @@ def motion_joint_vel_error(env: ManagerBasedRLEnv, command_name: str) -> torch.T
 
 def motion_joint_vel_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
     return torch.exp(-motion_joint_vel_error(env, command_name) ** 2 / std ** 2)
+
+def feet_contact_time(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, threshold: float) -> torch.Tensor:
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    first_air = contact_sensor.compute_first_air(env.step_dt, env.physics_dt)[:, sensor_cfg.body_ids]
+    last_contact_time = contact_sensor.data.last_contact_time[:, sensor_cfg.body_ids]
+    reward = torch.sum((last_contact_time < threshold) * first_air, dim=-1)
+    return reward
