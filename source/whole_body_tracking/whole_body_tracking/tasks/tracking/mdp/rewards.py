@@ -6,7 +6,7 @@ import torch
 
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
-from isaaclab.utils.math import quat_error_magnitude, subtract_frame_transforms
+from isaaclab.utils.math import quat_error_magnitude, subtract_frame_transforms, quat_apply_yaw, quat_inv
 
 from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
 
@@ -73,6 +73,25 @@ def motion_relative_body_position_error_exp(env: ManagerBasedRLEnv, command_name
     return torch.exp(-motion_relative_body_position_error(env, command_name, body_names) ** 2 / std ** 2)
 
 
+def motion_relative_body_velocity_error(env: ManagerBasedRLEnv, command_name: str,
+                                        body_names: list[str] | None) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    if body_names is None:
+        body_names = command.cfg.body_names
+    body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
+    robot_vel_b = quat_apply_yaw(quat_inv(command.robot_ref_pose_w[:, 3:7]).repeat(1, len(body_indexes), 1),
+                                 command.robot_body_vel_w[:, body_indexes, :3] - command.robot_ref_vel_w[:, None, :3])
+    motion_vel_b = quat_apply_yaw(quat_inv(command.motion_ref_pose_w[:, 3:7]).repeat(1, len(body_indexes), 1),
+                                  command.motion_body_vel_w[:, body_indexes, :3] - command.motion_ref_vel_w[:, None,
+                                                                                   :3])
+    return torch.norm(motion_vel_b - robot_vel_b, dim=-1).mean(-1)
+
+
+def motion_relative_body_velocity_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
+                                            body_names: Optional[list[str]] = None) -> torch.Tensor:
+    return torch.exp(-motion_relative_body_velocity_error(env, command_name, body_names) ** 2 / std ** 2)
+
+
 def motion_joint_pos_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
     return torch.norm(command.motion_joint_pos - command.robot_joint_pos, dim=-1)
@@ -89,6 +108,7 @@ def motion_joint_vel_error(env: ManagerBasedRLEnv, command_name: str) -> torch.T
 
 def motion_joint_vel_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
     return torch.exp(-motion_joint_vel_error(env, command_name) ** 2 / std ** 2)
+
 
 def feet_contact_time(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, threshold: float) -> torch.Tensor:
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
