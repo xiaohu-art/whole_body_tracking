@@ -73,6 +73,32 @@ def motion_relative_body_position_error_exp(env: ManagerBasedRLEnv, command_name
     return torch.exp(-motion_relative_body_position_error(env, command_name, body_names) ** 2 / std ** 2)
 
 
+def motion_relative_body_orientation_error(env: ManagerBasedRLEnv, command_name: str,
+                                           body_names: list[str] | None) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    if body_names is None:
+        body_names = command.cfg.body_names
+    body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
+
+    _, robot_ori_b = subtract_frame_transforms(
+        command.robot_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
+        command.robot_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
+        command.robot_body_pose_w[:, :, :3], command.robot_body_pose_w[:, :, 3:7],
+    )
+
+    _, moton_ori_b = subtract_frame_transforms(
+        command.motion_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
+        command.motion_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
+        command.motion_body_pose_w[:, body_indexes, :3], command.motion_body_pose_w[:, body_indexes, 3:7],
+    )
+    return quat_error_magnitude(moton_ori_b, robot_ori_b).mean(-1)
+
+
+def motion_relative_body_orientation_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
+                                               body_names: Optional[list[str]] = None) -> torch.Tensor:
+    return torch.exp(-motion_relative_body_orientation_error(env, command_name, body_names) ** 2 / std ** 2)
+
+
 def motion_relative_body_velocity_error(env: ManagerBasedRLEnv, command_name: str,
                                         body_names: list[str] | None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
