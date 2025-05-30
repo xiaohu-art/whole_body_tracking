@@ -61,6 +61,7 @@ class MySceneCfg(InteractiveSceneCfg):
     )
     contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
 
+
 ##
 # MDP settings
 ##
@@ -182,11 +183,21 @@ class RewardsCfg:
         func=mdp.motion_relative_body_position_error_exp, weight=0.5,
         params={"command_name": "motion", "std": math.sqrt(0.25)},
     )
+    motion_body_ori = RewTerm(
+        func=mdp.motion_relative_body_orientation_error_exp, weight=0.5,
+        params={"command_name": "motion", "std": math.sqrt(0.5)},
+    )
+    motion_body_vel = RewTerm(
+        func=mdp.motion_relative_body_velocity_error_exp, weight=0.5,
+        params={"command_name": "motion", "std": math.sqrt(0.25)},
+    )
     motion_joint_pos = RewTerm(
-        func=mdp.motion_joint_pos_error, weight=-1e-0, params={"command_name": "motion"},
+        func=mdp.motion_joint_pos_error_exp, weight=1e0,
+        params={"command_name": "motion", "std": math.sqrt(1.0)},
     )
     motion_joint_vel = RewTerm(
-        func=mdp.motion_joint_vel_error, weight=-1e-1, params={"command_name": "motion"},
+        func=mdp.motion_joint_vel_error_exp, weight=1e-1,
+        params={"command_name": "motion", "std": math.sqrt(4.0)},
     )
     feet_contact_time = RewTerm(func=mdp.feet_contact_time, weight=-1.0, params={
         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_ankle_roll_link"]),
