@@ -173,30 +173,30 @@ class RewardsCfg:
     """Reward terms for the MDP."""
     motion_global_root_pos = RewTerm(
         func=mdp.motion_global_ref_position_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.25)},
+        params={"command_name": "motion", "std": math.sqrt(0.09)},
     )
     motion_global_root_ori = RewTerm(
         func=mdp.motion_global_ref_orientation_error_exp, weight=0.3,
-        params={"command_name": "motion", "std": math.sqrt(0.5)},
+        params={"command_name": "motion", "std": math.sqrt(0.15)},
     )
     motion_body_pos = RewTerm(
         func=mdp.motion_relative_body_position_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.25)},
+        params={"command_name": "motion", "std": math.sqrt(0.09)},
     )
     motion_body_ori = RewTerm(
         func=mdp.motion_relative_body_orientation_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.5)},
+        params={"command_name": "motion", "std": math.sqrt(0.15)},
     )
     motion_body_vel = RewTerm(
         func=mdp.motion_relative_body_velocity_error_exp, weight=0.5,
         params={"command_name": "motion", "std": math.sqrt(0.25)},
     )
     motion_joint_pos = RewTerm(
-        func=mdp.motion_joint_pos_error_exp, weight=1e0,
-        params={"command_name": "motion", "std": math.sqrt(1.0)},
+        func=mdp.motion_joint_pos_error_exp, weight=0.5,
+        params={"command_name": "motion", "std": math.sqrt(0.5)},
     )
     motion_joint_vel = RewTerm(
-        func=mdp.motion_joint_vel_error_exp, weight=1e-1,
+        func=mdp.motion_joint_vel_error_exp, weight=0.5,
         params={"command_name": "motion", "std": math.sqrt(4.0)},
     )
     feet_contact_time = RewTerm(func=mdp.feet_contact_time, weight=-1.0, params={
