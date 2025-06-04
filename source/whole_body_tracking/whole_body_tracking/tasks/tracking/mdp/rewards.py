@@ -57,7 +57,7 @@ def motion_relative_body_position_error(env: ManagerBasedRLEnv, command_name: st
     robot_pos_b, _ = subtract_frame_transforms(
         command.robot_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
         command.robot_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
-        command.robot_body_pose_w[:, :, :3], command.robot_body_pose_w[:, :, 3:7],
+        command.robot_body_pose_w[:, body_indexes, :3], command.robot_body_pose_w[:, body_indexes, 3:7],
     )
 
     motion_pos_b, _ = subtract_frame_transforms(
@@ -83,7 +83,7 @@ def motion_relative_body_orientation_error(env: ManagerBasedRLEnv, command_name:
     _, robot_ori_b = subtract_frame_transforms(
         command.robot_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
         command.robot_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
-        command.robot_body_pose_w[:, :, :3], command.robot_body_pose_w[:, :, 3:7],
+        command.robot_body_pose_w[:, body_indexes, :3], command.robot_body_pose_w[:, body_indexes, 3:7],
     )
 
     _, moton_ori_b = subtract_frame_transforms(
