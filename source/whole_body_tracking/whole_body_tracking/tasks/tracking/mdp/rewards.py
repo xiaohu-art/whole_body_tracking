@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
 import torch
+from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
 
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
-from isaaclab.utils.math import quat_error_magnitude, subtract_frame_transforms, quat_apply_yaw, quat_inv
-
-from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
+from isaaclab.utils.math import quat_error_magnitude, quat_apply_yaw, quat_inv
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -57,12 +56,8 @@ def motion_relative_body_position_error(env: ManagerBasedRLEnv, command_name: st
     else:
         body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
 
-    motion_pos_b, _ = subtract_frame_transforms(
-        command.motion_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
-        command.motion_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
-        command.motion_body_pose_w[:, body_indexes, :3], command.motion_body_pose_w[:, body_indexes, 3:7],
-    )
-    return torch.norm(motion_pos_b - robot_pos_b, dim=-1).mean(-1)
+    return torch.norm(command.motion_body_pose_relative_w[:, body_indexes, :3] -
+                      command.robot_body_pose_w[:, body_indexes, :3], dim=-1).mean(-1)
 
 
 def motion_relative_body_position_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
@@ -78,18 +73,8 @@ def motion_relative_body_orientation_error(env: ManagerBasedRLEnv, command_name:
     else:
         body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
 
-    _, robot_ori_b = subtract_frame_transforms(
-        command.robot_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
-        command.robot_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
-        command.robot_body_pose_w[:, body_indexes, :3], command.robot_body_pose_w[:, body_indexes, 3:7],
-    )
-
-    _, moton_ori_b = subtract_frame_transforms(
-        command.motion_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
-        command.motion_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
-        command.motion_body_pose_w[:, body_indexes, :3], command.motion_body_pose_w[:, body_indexes, 3:7],
-    )
-    return quat_error_magnitude(moton_ori_b, robot_ori_b).mean(-1)
+    return quat_error_magnitude(command.motion_body_pose_relative_w[:, body_indexes, 3:7],
+                                command.robot_body_pose_w[:, body_indexes, 3:7]).mean(-1)
 
 
 def motion_relative_body_orientation_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,

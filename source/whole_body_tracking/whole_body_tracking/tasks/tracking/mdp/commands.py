@@ -6,14 +6,15 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
+from isaaclab_tasks.direct.humanoid_amp.motions import MotionLoader
 
 from isaaclab.assets import Articulation
 from isaaclab.managers import CommandTerm, CommandTermCfg
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
 from isaaclab.markers.config import FRAME_MARKER_CFG
 from isaaclab.utils import configclass
-import isaaclab.utils.math as math_utils
-from isaaclab_tasks.direct.humanoid_amp.motions import MotionLoader
+from isaaclab.utils.math import quat_mul, quat_apply, quat_inv, quat_error_magnitude, yaw_quat, sample_uniform, \
+    quat_from_euler_xyz
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -45,7 +46,9 @@ class MotionCommand(CommandTerm):
         self.motion_ref_vel_w = torch.zeros(self.num_envs, 6, device=self.device)
         self.motion_body_pose_w = torch.zeros(self.num_envs, len(cfg.body_names), 7, device=self.device)
         self.motion_body_pose_w[:, :, 3] = 1.0
+        self.motion_body_pose_relative_w = self.motion_body_pose_w.clone()
         self.motion_body_vel_w = torch.zeros(self.num_envs, len(cfg.body_names), 6, device=self.device)
+
         self.motion_joint_pos = torch.zeros(self.num_envs, len(cfg.joint_names), device=self.device)
         self.motion_joint_vel = torch.zeros(self.num_envs, len(cfg.joint_names), device=self.device)
 
@@ -91,7 +94,7 @@ class MotionCommand(CommandTerm):
 
     def _update_metrics(self):
         self.metrics["error_ref_pos"] = torch.norm(self.motion_ref_pose_w[:, :3] - self.robot_ref_pose_w[:, :3], dim=-1)
-        self.metrics["error_ref_rot"] = math_utils.quat_error_magnitude(
+        self.metrics["error_ref_rot"] = quat_error_magnitude(
             self.motion_ref_pose_w[:, 3:7], self.robot_ref_pose_w[:, 3:7])
         self.metrics["error_ref_lin_vel"] = torch.norm(
             self.motion_ref_vel_w[:, :3] - self.robot_ref_vel_w[:, :3], dim=-1)
@@ -99,9 +102,14 @@ class MotionCommand(CommandTerm):
             self.motion_ref_vel_w[:, 3:] - self.robot_ref_vel_w[:, 3:], dim=-1)
 
         self.metrics["error_body_pos"] = torch.norm(
-            self.motion_body_pose_w[:, :, :3] - self.robot_body_pose_w[:, :, :3], dim=2).mean(dim=-1)
-        self.metrics["error_body_rot"] = math_utils.quat_error_magnitude(
-            self.motion_body_pose_w[:, :, 3:7], self.robot_body_pose_w[:, :, 3:7]).mean(dim=-1)
+            self.motion_body_pose_relative_w[:, :, :3] - self.robot_body_pose_w[:, :, :3], dim=2).mean(dim=-1)
+        self.metrics["error_body_rot"] = quat_error_magnitude(
+            self.motion_body_pose_relative_w[:, :, 3:7], self.robot_body_pose_w[:, :, 3:7]).mean(dim=-1)
+
+        self.metrics["error_body_lin_vel"] = torch.norm(
+            self.motion_body_vel_w[:, :, :3] - self.robot_body_vel_w[:, :, :3], dim=2).mean(dim=-1)
+        self.metrics["error_body_ang_vel"] = torch.norm(
+            self.motion_body_vel_w[:, :, 3:] - self.robot_body_vel_w[:, :, 3:], dim=2).mean(dim=-1)
 
         self.metrics["error_joint_pos"] = torch.norm(self.motion_joint_pos - self.robot_joint_pos, dim=-1)
         self.metrics["error_joint_vel"] = torch.norm(self.motion_joint_vel - self.robot_joint_vel, dim=-1)
@@ -126,13 +134,13 @@ class MotionCommand(CommandTerm):
 
         range_list = [self.cfg.pose_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
         ranges = torch.tensor(range_list, device=self.device)
-        rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=self.device)
+        rand_samples = sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=self.device)
         root_states[:, 0:3] += rand_samples[:, 0:3]
-        orientations_delta = math_utils.quat_from_euler_xyz(rand_samples[:, 3], rand_samples[:, 4], rand_samples[:, 5])
-        root_states[:, 3:7] = math_utils.quat_mul(orientations_delta, root_states[:, 3:7])
+        orientations_delta = quat_from_euler_xyz(rand_samples[:, 3], rand_samples[:, 4], rand_samples[:, 5])
+        root_states[:, 3:7] = quat_mul(orientations_delta, root_states[:, 3:7])
         range_list = [self.cfg.velocity_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
         ranges = torch.tensor(range_list, device=self.device)
-        rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=self.device)
+        rand_samples = sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=self.device)
         root_states[:, 7:] += rand_samples[:, :]
 
         joint_pos = self.robot.data.default_joint_pos[env_ids].clone()
@@ -141,12 +149,12 @@ class MotionCommand(CommandTerm):
         joint_pos[:, self.robot_joint_indexes] = motion_joint_pos[:, self.motion_joint_indexes]
         joint_vel[:, self.robot_joint_indexes] = motion_joint_vel[:, self.motion_joint_indexes]
 
-        joint_pos += math_utils.sample_uniform(*self.cfg.joint_position_range, joint_pos.shape, joint_pos.device)
+        joint_pos += sample_uniform(*self.cfg.joint_position_range, joint_pos.shape, joint_pos.device)
         soft_joint_pos_limits = self.robot.data.soft_joint_pos_limits[env_ids]
         joint_pos[:, self.robot_joint_indexes] = torch.clip(joint_pos[:, self.robot_joint_indexes],
-            soft_joint_pos_limits[:, self.robot_joint_indexes, 0],
-            soft_joint_pos_limits[:, self.robot_joint_indexes, 1]
-        )
+                                                            soft_joint_pos_limits[:, self.robot_joint_indexes, 0],
+                                                            soft_joint_pos_limits[:, self.robot_joint_indexes, 1]
+                                                            )
         self.robot.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
         self.robot.write_root_state_to_sim(root_states, env_ids=env_ids)
 
@@ -165,6 +173,9 @@ class MotionCommand(CommandTerm):
             body_ang_vel,
         ) = self.motion.sample(num_samples=self.num_envs, times=self.motion_times)
 
+        self.motion_joint_pos = joint_pos[:, self.motion_joint_indexes]
+        self.motion_joint_vel = joint_vel[:, self.motion_joint_indexes]
+
         self.motion_ref_pose_w[:, :3] = body_pos[:, self.motion_ref_body_index]
         self.motion_ref_pose_w[:, 3:7] = body_rot[:, self.motion_ref_body_index]
         self.motion_ref_vel_w[:, :3] = body_lin_vel[:, self.motion_ref_body_index]
@@ -177,8 +188,18 @@ class MotionCommand(CommandTerm):
         self.motion_body_vel_w[:, :, 3:] = body_ang_vel[:, self.motion_body_indexes]
         self.motion_body_pose_w[:, :, :2] += self.motion_offset_pos[:, None, :2]
 
-        self.motion_joint_pos = joint_pos[:, self.motion_joint_indexes]
-        self.motion_joint_vel = joint_vel[:, self.motion_joint_indexes]
+        motion_ref_pose_w_repeat = self.motion_ref_pose_w[:, None, :].repeat(1, len(self.motion_body_indexes), 1)
+        robot_ref_pose_w = self.robot_ref_pose_w[:, None, :].repeat(1, len(self.motion_body_indexes), 1)
+
+        motion_ref_ori_w_inv = quat_inv(motion_ref_pose_w_repeat[..., 3:7])
+        motion_body_ori_b = quat_mul(motion_ref_ori_w_inv, self.motion_body_pose_w[..., 3:7])
+        motion_body_pos_b = quat_apply(motion_ref_ori_w_inv,
+                                       self.motion_body_pose_w[..., :3] - motion_ref_pose_w_repeat[..., :3])
+
+        robot_ref_ori_yaw = yaw_quat(robot_ref_pose_w[..., 3:7])
+        self.motion_body_pose_relative_w[..., 3:7] = quat_mul(robot_ref_ori_yaw, motion_body_ori_b)
+        self.motion_body_pose_relative_w[..., :3] = (
+                robot_ref_pose_w[..., :3] + quat_apply(robot_ref_ori_yaw, motion_body_pos_b))
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
@@ -219,8 +240,8 @@ class MotionCommand(CommandTerm):
         for i in range(len(self.cfg.body_names)):
             self.current_body_visualizers[i].visualize(self.robot_body_pose_w[:, i, :3],
                                                        self.robot_body_pose_w[:, i, 3:7])
-            self.goal_body_visualizers[i].visualize(self.motion_body_pose_w[:, i, :3],
-                                                    self.motion_body_pose_w[:, i, 3:7])
+            self.goal_body_visualizers[i].visualize(self.motion_body_pose_relative_w[:, i, :3],
+                                                    self.motion_body_pose_relative_w[:, i, 3:7])
 
 
 @configclass
