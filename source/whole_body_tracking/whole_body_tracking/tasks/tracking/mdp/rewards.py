@@ -37,8 +37,9 @@ def motion_global_body_position_error(env: ManagerBasedRLEnv, command_name: str,
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     if body_names is None:
-        body_names = command.cfg.body_names
-    body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
+        body_indexes = list(range(len(command.cfg.body_names)))
+    else:
+        body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
     return torch.norm(command.motion_body_pose_w[:, body_indexes, :3] - command.robot_body_pose_w[:, body_indexes, :3],
                       dim=-1).mean(-1)
 
@@ -52,13 +53,9 @@ def motion_relative_body_position_error(env: ManagerBasedRLEnv, command_name: st
                                         body_names: list[str] | None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
     if body_names is None:
-        body_names = command.cfg.body_names
-    body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
-    robot_pos_b, _ = subtract_frame_transforms(
-        command.robot_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
-        command.robot_ref_pose_w[:, None, 3:7].repeat(1, len(body_indexes), 1),
-        command.robot_body_pose_w[:, body_indexes, :3], command.robot_body_pose_w[:, body_indexes, 3:7],
-    )
+        body_indexes = list(range(len(command.cfg.body_names)))
+    else:
+        body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
 
     motion_pos_b, _ = subtract_frame_transforms(
         command.motion_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
@@ -77,8 +74,9 @@ def motion_relative_body_orientation_error(env: ManagerBasedRLEnv, command_name:
                                            body_names: list[str] | None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
     if body_names is None:
-        body_names = command.cfg.body_names
-    body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
+        body_indexes = list(range(len(command.cfg.body_names)))
+    else:
+        body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
 
     _, robot_ori_b = subtract_frame_transforms(
         command.robot_ref_pose_w[:, None, :3].repeat(1, len(body_indexes), 1),
@@ -103,8 +101,9 @@ def motion_relative_body_velocity_error(env: ManagerBasedRLEnv, command_name: st
                                         body_names: list[str] | None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
     if body_names is None:
-        body_names = command.cfg.body_names
-    body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
+        body_indexes = list(range(len(command.cfg.body_names)))
+    else:
+        body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
     robot_vel_b = quat_apply_yaw(quat_inv(command.robot_ref_pose_w[:, 3:7]).repeat(1, len(body_indexes), 1),
                                  command.robot_body_vel_w[:, body_indexes, :3] - command.robot_ref_vel_w[:, None, :3])
     motion_vel_b = quat_apply_yaw(quat_inv(command.motion_ref_pose_w[:, 3:7]).repeat(1, len(body_indexes), 1),
