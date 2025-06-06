@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import MISSING
-import math
 
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg
@@ -173,42 +172,57 @@ class RewardsCfg:
     """Reward terms for the MDP."""
     motion_global_root_pos = RewTerm(
         func=mdp.motion_global_ref_position_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.09)},
+        params={"command_name": "motion", "std": 0.3},
     )
     motion_global_root_ori = RewTerm(
-        func=mdp.motion_global_ref_orientation_error_exp, weight=0.3,
-        params={"command_name": "motion", "std": math.sqrt(0.15)},
+        func=mdp.motion_global_ref_orientation_error_exp, weight=0.5,
+        params={"command_name": "motion", "std": 0.4},
     )
     motion_body_pos = RewTerm(
-        func=mdp.motion_relative_body_position_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.09)},
+        func=mdp.motion_relative_body_position_error_exp, weight=1.0,
+        params={"command_name": "motion", "std": 0.3},
     )
     motion_body_ori = RewTerm(
-        func=mdp.motion_relative_body_orientation_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.15)},
+        func=mdp.motion_relative_body_orientation_error_exp, weight=1.0,
+        params={"command_name": "motion", "std": 0.4},
     )
-    motion_body_vel = RewTerm(
-        func=mdp.motion_relative_body_velocity_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.25)},
+    motion_ee_pos = RewTerm(
+        func=mdp.motion_relative_body_position_error_exp, weight=1.0,
+        params={"command_name": "motion", "std": 0.1,
+                "body_names": ['left_ankle_roll_link', 'right_ankle_roll_link',
+                               'left_wrist_yaw_link', 'right_wrist_yaw_link']},
     )
-    motion_joint_pos = RewTerm(
-        func=mdp.motion_joint_pos_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(0.5)},
+    motion_ee_ori = RewTerm(
+        func=mdp.motion_relative_body_orientation_error_exp, weight=1.0,
+        params={"command_name": "motion", "std": 0.15,
+                "body_names": ['left_ankle_roll_link', 'right_ankle_roll_link',
+                               'left_wrist_yaw_link', 'right_wrist_yaw_link']},
     )
-    motion_joint_vel = RewTerm(
-        func=mdp.motion_joint_vel_error_exp, weight=0.5,
-        params={"command_name": "motion", "std": math.sqrt(4.0)},
+    motion_body_lin_vel = RewTerm(
+        func=mdp.motion_global_body_linear_velocity_error_exp, weight=1.0,
+        params={"command_name": "motion", "std": 0.5},
     )
-    feet_contact_time = RewTerm(func=mdp.feet_contact_time, weight=-1.0, params={
-        "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_ankle_roll_link"]),
-        "threshold": 0.2,
-    })
+    motion_body_ang_vel = RewTerm(
+        func=mdp.motion_global_body_angular_velocity_error_exp, weight=1.0,
+        params={"command_name": "motion", "std": 3.14},
+    )
+    # motion_joint_pos = RewTerm(
+    #     func=mdp.motion_joint_pos_error_exp, weight=0.5,
+    #     params={"command_name": "motion", "std": math.sqrt(0.5)},
+    # )
+    # motion_joint_vel = RewTerm(
+    #     func=mdp.motion_joint_vel_error_exp, weight=0.5,
+    #     params={"command_name": "motion", "std": math.sqrt(4.0)},
+    # )
+    # feet_contact_time = RewTerm(func=mdp.feet_contact_time, weight=-5.0, params={
+    #     "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_ankle_roll_link"]),
+    #     "threshold": 0.2,
+    # })
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-1e-1)
     joint_limit = RewTerm(
         func=mdp.joint_pos_limits, weight=-100.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_ankle_.*_joint", ".*waist_.*_joint"])},
     )
-    termination = RewTerm(func=mdp.is_terminated, weight=-200.0)
 
 
 @configclass
