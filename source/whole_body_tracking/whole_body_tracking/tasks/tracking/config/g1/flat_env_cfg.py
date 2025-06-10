@@ -36,13 +36,13 @@ class G1FlatWalkEnvCfg(HumanoidFlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_walk_short.npz"
-        self.commands.motion.pose_range = {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.01, 0.01),
-                                           "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.2, 0.2)}
-        self.commands.motion.velocity_range = {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
-                                               "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}
-        self.events.push_robot.params = (
-            {"velocity_range": {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
-                                "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}})
+        # self.commands.motion.pose_range = {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.01, 0.01),
+        #                                    "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.2, 0.2)}
+        # self.commands.motion.velocity_range = {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
+        #                                        "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}
+        # self.events.push_robot.params = (
+        #     {"velocity_range": {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
+        #                         "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}})
 
 @configclass
 class G1FlatDanceEnvCfg(HumanoidFlatEnvCfg):
