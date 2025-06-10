@@ -189,17 +189,14 @@ class MotionCommand(CommandTerm):
         self.motion_body_pose_w[:, :, :2] += self.motion_offset_pos[:, None, :2]
 
         motion_ref_pose_w_repeat = self.motion_ref_pose_w[:, None, :].repeat(1, len(self.motion_body_indexes), 1)
-        robot_ref_pose_w = self.robot_ref_pose_w[:, None, :].repeat(1, len(self.motion_body_indexes), 1)
+        robot_ref_pose_w_repeat = self.robot_ref_pose_w[:, None, :].repeat(1, len(self.motion_body_indexes), 1)
 
-        motion_ref_ori_w_inv = quat_inv(motion_ref_pose_w_repeat[..., 3:7])
-        motion_body_ori_b = quat_mul(motion_ref_ori_w_inv, self.motion_body_pose_w[..., 3:7])
-        motion_body_pos_b = quat_apply(motion_ref_ori_w_inv,
-                                       self.motion_body_pose_w[..., :3] - motion_ref_pose_w_repeat[..., :3])
+        delta_ori_w = yaw_quat(
+            quat_mul(robot_ref_pose_w_repeat[..., 3:7], quat_inv(motion_ref_pose_w_repeat[..., 3:7])))
 
-        robot_ref_ori_yaw = yaw_quat(robot_ref_pose_w[..., 3:7])
-        self.motion_body_pose_relative_w[..., 3:7] = quat_mul(robot_ref_ori_yaw, motion_body_ori_b)
-        self.motion_body_pose_relative_w[..., :3] = (
-                robot_ref_pose_w[..., :3] + quat_apply(robot_ref_ori_yaw, motion_body_pos_b))
+        self.motion_body_pose_relative_w[..., 3:7] = quat_mul(delta_ori_w, self.motion_body_pose_w[..., 3:7])
+        self.motion_body_pose_relative_w[..., :3] = robot_ref_pose_w_repeat[..., :3] + quat_apply(
+            delta_ori_w, self.motion_body_pose_w[..., :3] - motion_ref_pose_w_repeat[..., :3])
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
