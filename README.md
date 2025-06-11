@@ -25,23 +25,25 @@ This repository serves as a template for building projects or extensions based o
 
 - Clone this repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
 
-- **This repo uses git-lfs to store usd. You need to install [git-lfs](https://git-lfs.com/)**. 
+- **This repo uses git-lfs to store usd. You need to install [git-lfs](https://git-lfs.com/)**. (TODO: put motion to GCS)
 
 ```bash
 # Option 1: HTTPS
-git clone https://github.com/isaac-sim/IsaacLabExtensionTemplate.git
+git clone https://github.com/qiayuanl/whole_body_tracking.git
 
 # Option 2: SSH
-git clone git@github.com:isaac-sim/IsaacLabExtensionTemplate.git
+git clone git@github.com:qiayuanl/whole_body_tracking.git
 ```
 
-- Throughout the repository, the name `whole_body_tracking` only serves as an example and we provide a script to rename all the references to it automatically:
+- Pull the robot description files (TODO: as well as motion files)
 
 ```bash
 # Enter the repository
-cd IsaacLabExtensionTemplate
+cd whole_body_tracking
 # Rename all occurrences of whole_body_tracking (in files/directories) to your_fancy_extension_name
-python scripts/rename_template.py your_fancy_extension_name
+curl -L -o unitree_description.tar.gz https://storage.googleapis.com/qiayuanl_robot_descriptions/unitree_description.tar.gz && \
+tar -xzf unitree_description.tar.gz -C source/whole_body_tracking/whole_body_tracking/assets/ && \
+rm unitree_description.tar.gz
 ```
 
 - Using a python interpreter that has Isaac Lab installed, install the library
