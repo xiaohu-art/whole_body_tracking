@@ -29,7 +29,6 @@ class MotionCommand(CommandTerm):
         self.robot: Articulation = env.scene[cfg.asset_name]
         self.robot_ref_body_index = self.robot.body_names.index(self.cfg.reference_body)
         self.body_indexes = self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0]
-        self.joint_indexes = self.robot.find_joints(self.cfg.joint_names, preserve_order=True)[0]  # TODO remove this
 
         assert os.path.isfile(cfg.motion_file), f"Invalid file path: {cfg.motion_file}"
         data = np.load(cfg.motion_file)
@@ -62,11 +61,11 @@ class MotionCommand(CommandTerm):
 
     @property
     def joint_pos(self) -> torch.Tensor:
-        return self._joint_pos[self.time_steps][:, self.joint_indexes]
+        return self._joint_pos[self.time_steps]
 
     @property
     def joint_vel(self) -> torch.Tensor:
-        return self._joint_vel[self.time_steps][:, self.joint_indexes]
+        return self._joint_vel[self.time_steps]
 
     @property
     def body_pos_w(self) -> torch.Tensor:
@@ -102,11 +101,11 @@ class MotionCommand(CommandTerm):
 
     @property
     def robot_joint_pos(self) -> torch.Tensor:
-        return self.robot.data.joint_pos[:, self.joint_indexes]
+        return self.robot.data.joint_pos
 
     @property
     def robot_joint_vel(self) -> torch.Tensor:
-        return self.robot.data.joint_vel[:, self.joint_indexes]
+        return self.robot.data.joint_vel
 
     @property
     def robot_body_pos_w(self) -> torch.Tensor:
@@ -180,8 +179,8 @@ class MotionCommand(CommandTerm):
         root_lin_vel[env_ids] += rand_samples[:, :3]
         root_ang_vel[env_ids] += rand_samples[:, 3:]
 
-        joint_pos = self._joint_pos[self.time_steps].clone()  # TODO(qiayuanl): should be joint_pos
-        joint_vel = self._joint_pos[self.time_steps].clone()  # TODO(qiayuanl): should be joint_vel
+        joint_pos = self.joint_pos.clone()
+        joint_vel = self.joint_vel.clone()
 
         joint_pos += sample_uniform(*self.cfg.joint_position_range, joint_pos.shape, joint_pos.device)
         soft_joint_pos_limits = self.robot.data.soft_joint_pos_limits[env_ids]
@@ -258,7 +257,6 @@ class MotionCommandCfg(CommandTermCfg):
 
     motion_file: str = MISSING
     reference_body: str = MISSING
-    joint_names: list[str] = MISSING
     body_names: list[str] = MISSING
 
     pose_range: dict[str, tuple[float, float]] = {}
