@@ -3,14 +3,16 @@
 .. code-block:: bash
 
     # Usage
-    python replay_npz.py --motion_file source/whole_body_tracking/whole_body_tracking/assets/g1/motions/lafan_walk_short.npz
+    python replay_motion.py --motion_file source/whole_body_tracking/whole_body_tracking/assets/g1/motions/lafan_walk_short.npz
 """
 
 """Launch Isaac Sim Simulator first."""
 
 import argparse
+import os
 
 import numpy as np
+import torch
 
 from isaaclab.app import AppLauncher
 
@@ -41,7 +43,6 @@ from isaaclab.assets import ArticulationCfg, AssetBaseCfg, Articulation
 from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
 from isaaclab.sim import SimulationContext
 from isaaclab.utils import configclass
-from isaaclab_tasks.direct.humanoid_amp.motions import MotionLoader
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 
 ##
@@ -76,37 +77,32 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     sim_dt = sim.get_physics_dt()
 
     # Load motion
-    motion = MotionLoader(motion_file=args_cli.motion_file, device=sim.device)
-    motion_joint_indexes = motion.get_dof_index(robot.joint_names)
-    motion_times = np.zeros(scene.num_envs)
+    assert os.path.isfile(args_cli.motion_file), f"Invalid file path: {args_cli.motion_file}"
+    data = np.load(args_cli.motion_file)
+
+    joint_pos = torch.tensor(data["joint_pos"], dtype=torch.float32, device=sim.device)
+    joint_vel = torch.tensor(data["joint_vel"], dtype=torch.float32, device=sim.device)
+    body_pos_w = torch.tensor(data["body_pos_w"], dtype=torch.float32, device=sim.device)
+    body_quat_w = torch.tensor(data["body_quat_w"], dtype=torch.float32, device=sim.device)
+    body_lin_vel_w = torch.tensor(data["body_lin_vel_w"], dtype=torch.float32, device=sim.device)
+    body_ang_vel_w = torch.tensor(data["body_ang_vel_w"], dtype=torch.float32, device=sim.device)
+    time_steps = torch.zeros(scene.num_envs, dtype=torch.long, device=sim.device)
+    time_step_total = joint_pos.shape[0]
 
     # Simulation loop
     while simulation_app.is_running():
-        motion_times += sim_dt
-        reset_ids = motion_times > motion.duration
-        motion_times[reset_ids] = 0.0
-
-        (
-            motion_joint_pos,
-            motion_joint_vel,
-            motion_body_pos,
-            motion_body_rot,
-            motion_body_lin_vel,
-            motion_body_ang_vel,
-        ) = motion.sample(num_samples=scene.num_envs, times=motion_times)
+        time_steps += 1
+        reset_ids = time_steps >= time_step_total
+        time_steps[reset_ids] = 0
 
         root_states = robot.data.default_root_state.clone()
-        root_states[:, :3] = motion_body_pos[:, 0]
-        root_states[:, :2] += scene.env_origins[:, :2]
-        root_states[:, 3:7] = motion_body_rot[:, 0]
-        root_states[:, 7:10] = motion_body_lin_vel[:, 0]
-        root_states[:, 10:] = motion_body_ang_vel[:, 0]
-
-        joint_pos = motion_joint_pos[:, motion_joint_indexes]
-        joint_vel = motion_joint_vel[:, motion_joint_indexes]
+        root_states[:, :3] = body_pos_w[time_steps][:, 0] + scene.env_origins[:, None, :]
+        root_states[:, 3:7] = body_quat_w[time_steps][:, 0]
+        root_states[:, 7:10] = body_lin_vel_w[time_steps][:, 0]
+        root_states[:, 10:] = body_ang_vel_w[time_steps][:, 0]
 
         robot.write_root_state_to_sim(root_states)
-        robot.write_joint_state_to_sim(joint_pos, joint_vel)
+        robot.write_joint_state_to_sim(joint_pos[time_steps], joint_vel[time_steps])
         scene.write_data_to_sim()
         sim.render()  # We don't want physic (sim.step())
         scene.update(sim_dt)
