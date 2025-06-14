@@ -230,11 +230,12 @@ class MotionCommand(CommandTerm):
                 self.goal_body_visualizers[i].set_visibility(True)
 
         else:
-            self.current_ref_visualizer.set_visibility(False)
-            self.goal_ref_visualizer.set_visibility(False)
-            for i in range(len(self.cfg.body_names)):
-                self.current_body_visualizers[i].set_visibility(False)
-                self.goal_body_visualizers[i].set_visibility(False)
+            if hasattr(self, "current_ref_visualizer"):
+                self.current_ref_visualizer.set_visibility(False)
+                self.goal_ref_visualizer.set_visibility(False)
+                for i in range(len(self.cfg.body_names)):
+                    self.current_body_visualizers[i].set_visibility(False)
+                    self.goal_body_visualizers[i].set_visibility(False)
 
     def _debug_vis_callback(self, event):
         if not self.robot.is_initialized:
