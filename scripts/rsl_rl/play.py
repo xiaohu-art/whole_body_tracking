@@ -4,10 +4,9 @@
 
 import argparse
 
-from isaaclab.app import AppLauncher
-
 # local imports
 import cli_args  # isort: skip
+from isaaclab.app import AppLauncher
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
@@ -39,14 +38,15 @@ import torch
 
 from rsl_rl.runners import OnPolicyRunner
 
-from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent
+from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent, ManagerBasedRLEnv
 from isaaclab.utils.dict import print_dict
-from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, export_policy_as_jit, export_policy_as_onnx
+from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
 from isaaclab_tasks.utils import get_checkpoint_path, parse_env_cfg
 
 # Import extensions to set up environment tasks
 import whole_body_tracking.tasks  # noqa: F401
-
+from whole_body_tracking.tasks.tracking.mdp import MotionCommand
+from whole_body_tracking.tasks.tracking.exporter import export_motion_policy_as_onnx
 
 def main():
     """Play with RSL-RL agent."""
@@ -88,7 +88,7 @@ def main():
         print(f"[INFO] Loading experiment from directory: {log_root_path}")
         resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
         print(f"[INFO]: Loading model checkpoint from: {resume_path}")
-    
+
     log_dir = os.path.dirname(resume_path)
 
     # wrap for video recording
@@ -119,12 +119,19 @@ def main():
 
     # export policy to onnx/jit
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
-    export_policy_as_jit(
-        ppo_runner.alg.actor_critic, ppo_runner.obs_normalizer, path=export_model_dir, filename="policy.pt"
-    )
-    export_policy_as_onnx(
-        ppo_runner.alg.actor_critic, normalizer=ppo_runner.obs_normalizer, path=export_model_dir, filename="policy.onnx"
-    )
+
+    unwrapped_env: ManagerBasedRLEnv = env.unwrapped
+    cmd: MotionCommand = unwrapped_env.command_manager.get_term("motion")
+    motions = {
+        "joint_pos": cmd.motion.joint_pos,
+        "joint_vel": cmd.motion.joint_vel,
+        "body_pos_w": cmd.motion.body_pos_w,
+        "body_quat_w": cmd.motion.body_quat_w,
+        "body_lin_vel_w": cmd.motion.body_lin_vel_w,
+        "body_ang_vel_w": cmd.motion.body_ang_vel_w,
+    }
+    export_motion_policy_as_onnx(motions, ppo_runner.alg.actor_critic, normalizer=ppo_runner.obs_normalizer,
+                                 path=export_model_dir, filename="policy.onnx")
 
     # reset environment
     obs, _ = env.get_observations()
