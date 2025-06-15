@@ -9,7 +9,6 @@
 """Launch Isaac Sim Simulator first."""
 
 import argparse
-import os
 
 import numpy as np
 import torch
@@ -49,6 +48,7 @@ from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 # Pre-defined configs
 ##
 from whole_body_tracking.robots.g1 import G1_CYLINDER_CFG
+from whole_body_tracking.tasks.tracking.mdp import MotionLoader
 
 
 @configclass
@@ -76,33 +76,27 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     # Define simulation stepping
     sim_dt = sim.get_physics_dt()
 
-    # Load motion
-    assert os.path.isfile(args_cli.motion_file), f"Invalid file path: {args_cli.motion_file}"
-    data = np.load(args_cli.motion_file)
-
-    joint_pos = torch.tensor(data["joint_pos"], dtype=torch.float32, device=sim.device)
-    joint_vel = torch.tensor(data["joint_vel"], dtype=torch.float32, device=sim.device)
-    body_pos_w = torch.tensor(data["body_pos_w"], dtype=torch.float32, device=sim.device)
-    body_quat_w = torch.tensor(data["body_quat_w"], dtype=torch.float32, device=sim.device)
-    body_lin_vel_w = torch.tensor(data["body_lin_vel_w"], dtype=torch.float32, device=sim.device)
-    body_ang_vel_w = torch.tensor(data["body_ang_vel_w"], dtype=torch.float32, device=sim.device)
+    motion = MotionLoader(
+        args_cli.motion_file,
+        torch.tensor([0], dtype=torch.long, device=sim.device),
+        sim.device,
+    )
     time_steps = torch.zeros(scene.num_envs, dtype=torch.long, device=sim.device)
-    time_step_total = joint_pos.shape[0]
 
     # Simulation loop
     while simulation_app.is_running():
         time_steps += 1
-        reset_ids = time_steps >= time_step_total
+        reset_ids = time_steps >= motion.time_step_total
         time_steps[reset_ids] = 0
 
         root_states = robot.data.default_root_state.clone()
-        root_states[:, :3] = body_pos_w[time_steps][:, 0] + scene.env_origins[:, None, :]
-        root_states[:, 3:7] = body_quat_w[time_steps][:, 0]
-        root_states[:, 7:10] = body_lin_vel_w[time_steps][:, 0]
-        root_states[:, 10:] = body_ang_vel_w[time_steps][:, 0]
+        root_states[:, :3] = motion.body_pos_w[time_steps][:, 0] + scene.env_origins[:, None, :]
+        root_states[:, 3:7] = motion.body_quat_w[time_steps][:, 0]
+        root_states[:, 7:10] = motion.body_lin_vel_w[time_steps][:, 0]
+        root_states[:, 10:] = motion.body_ang_vel_w[time_steps][:, 0]
 
         robot.write_root_state_to_sim(root_states)
-        robot.write_joint_state_to_sim(joint_pos[time_steps], joint_vel[time_steps])
+        robot.write_joint_state_to_sim(motion.joint_pos[time_steps], motion.joint_vel[time_steps])
         scene.write_data_to_sim()
         sim.render()  # We don't want physic (sim.step())
         scene.update(sim_dt)

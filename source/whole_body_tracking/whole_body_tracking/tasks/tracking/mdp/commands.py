@@ -20,6 +20,37 @@ if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
 
+class MotionLoader:
+    def __init__(self, motion_file: str, body_indexes: Sequence[int], device: str = "cpu"):
+        assert os.path.isfile(motion_file), f"Invalid file path: {motion_file}"
+        data = np.load(motion_file)
+        self.fps = data["fps"]
+        self.joint_pos = torch.tensor(data["joint_pos"], dtype=torch.float32, device=device)
+        self.joint_vel = torch.tensor(data["joint_vel"], dtype=torch.float32, device=device)
+        self._body_pos_w = torch.tensor(data["body_pos_w"], dtype=torch.float32, device=device)
+        self._body_quat_w = torch.tensor(data["body_quat_w"], dtype=torch.float32, device=device)
+        self._body_lin_vel_w = torch.tensor(data["body_lin_vel_w"], dtype=torch.float32, device=device)
+        self._body_ang_vel_w = torch.tensor(data["body_ang_vel_w"], dtype=torch.float32, device=device)
+        self._body_indexes = body_indexes
+        self.time_step_total = self.joint_pos.shape[0]
+
+    @property
+    def body_pos_w(self) -> torch.Tensor:
+        return self._body_pos_w[:, self._body_indexes]
+
+    @property
+    def body_quat_w(self) -> torch.Tensor:
+        return self._body_quat_w[:, self._body_indexes]
+
+    @property
+    def body_lin_vel_w(self) -> torch.Tensor:
+        return self._body_lin_vel_w[:, self._body_indexes]
+
+    @property
+    def body_ang_vel_w(self) -> torch.Tensor:
+        return self._body_ang_vel_w[:, self._body_indexes]
+
+
 class MotionCommand(CommandTerm):
     cfg: MotionCommandCfg
 
@@ -28,20 +59,12 @@ class MotionCommand(CommandTerm):
 
         self.robot: Articulation = env.scene[cfg.asset_name]
         self.robot_ref_body_index = self.robot.body_names.index(self.cfg.reference_body)
-        self.body_indexes = self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0]
+        self.motion_ref_body_index = self.cfg.body_names.index(self.cfg.reference_body)
+        self.body_indexes = torch.tensor(self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0],
+                                         dtype=torch.long, device=self.device)
 
-        assert os.path.isfile(cfg.motion_file), f"Invalid file path: {cfg.motion_file}"
-        data = np.load(cfg.motion_file)
-
-        self._joint_pos = torch.tensor(data["joint_pos"], dtype=torch.float32, device=self.device)
-        self._joint_vel = torch.tensor(data["joint_vel"], dtype=torch.float32, device=self.device)
-        self._body_pos_w = torch.tensor(data["body_pos_w"], dtype=torch.float32, device=self.device)
-        self._body_quat_w = torch.tensor(data["body_quat_w"], dtype=torch.float32, device=self.device)
-        self._body_lin_vel_w = torch.tensor(data["body_lin_vel_w"], dtype=torch.float32, device=self.device)
-        self._body_ang_vel_w = torch.tensor(data["body_ang_vel_w"], dtype=torch.float32, device=self.device)
+        self.motion = MotionLoader(self.cfg.motion_file, self.body_indexes, device=self.device)
         self.time_steps = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
-        self.time_step_total = self._joint_pos.shape[0]
-
         self.body_pos_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 3, device=self.device)
         self.body_quat_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 4, device=self.device)
         self.body_quat_relative_w[:, :, 0] = 1.0
@@ -61,43 +84,43 @@ class MotionCommand(CommandTerm):
 
     @property
     def joint_pos(self) -> torch.Tensor:
-        return self._joint_pos[self.time_steps]
+        return self.motion.joint_pos[self.time_steps]
 
     @property
     def joint_vel(self) -> torch.Tensor:
-        return self._joint_vel[self.time_steps]
+        return self.motion.joint_vel[self.time_steps]
 
     @property
     def body_pos_w(self) -> torch.Tensor:
-        return self._body_pos_w[self.time_steps][:, self.body_indexes] + self._env.scene.env_origins[:, None, :]
+        return self.motion.body_pos_w[self.time_steps] + self._env.scene.env_origins[:, None, :]
 
     @property
     def body_quat_w(self) -> torch.Tensor:
-        return self._body_quat_w[self.time_steps][:, self.body_indexes]
+        return self.motion.body_quat_w[self.time_steps]
 
     @property
     def body_lin_vel_w(self) -> torch.Tensor:
-        return self._body_lin_vel_w[self.time_steps][:, self.body_indexes]
+        return self.motion.body_lin_vel_w[self.time_steps]
 
     @property
     def body_ang_vel_w(self) -> torch.Tensor:
-        return self._body_ang_vel_w[self.time_steps][:, self.body_indexes]
+        return self.motion.body_ang_vel_w[self.time_steps]
 
     @property
     def ref_pos_w(self) -> torch.Tensor:
-        return self._body_pos_w[self.time_steps, self.robot_ref_body_index] + self._env.scene.env_origins
+        return self.motion.body_pos_w[self.time_steps, self.motion_ref_body_index] + self._env.scene.env_origins
 
     @property
     def ref_quat_w(self) -> torch.Tensor:
-        return self._body_quat_w[self.time_steps, self.robot_ref_body_index]
+        return self.motion.body_quat_w[self.time_steps, self.motion_ref_body_index]
 
     @property
     def ref_lin_vel_w(self) -> torch.Tensor:
-        return self._body_lin_vel_w[self.time_steps, self.robot_ref_body_index]
+        return self.motion.body_lin_vel_w[self.time_steps, self.motion_ref_body_index]
 
     @property
     def ref_ang_vel_w(self) -> torch.Tensor:
-        return self._body_ang_vel_w[self.time_steps, self.robot_ref_body_index]
+        return self.motion.body_ang_vel_w[self.time_steps, self.motion_ref_body_index]
 
     @property
     def robot_joint_pos(self) -> torch.Tensor:
@@ -160,7 +183,7 @@ class MotionCommand(CommandTerm):
 
     def _resample_command(self, env_ids: Sequence[int]):
         phase = sample_uniform(0.0, 1.0, (len(env_ids),), device=self.device)
-        self.time_steps[env_ids] = (phase * (self.time_step_total - 1)).long()
+        self.time_steps[env_ids] = (phase * (self.motion.time_step_total - 1)).long()
 
         root_pos = self.body_pos_w[:, 0].clone()
         root_ori = self.body_quat_w[:, 0].clone()
@@ -194,7 +217,7 @@ class MotionCommand(CommandTerm):
 
     def _update_command(self):
         self.time_steps += 1
-        env_ids = torch.where(self.time_steps >= self.time_step_total)[0]
+        env_ids = torch.where(self.time_steps >= self.motion.time_step_total)[0]
         self._resample_command(env_ids)
 
         ref_pos_w_repeat = self.ref_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
