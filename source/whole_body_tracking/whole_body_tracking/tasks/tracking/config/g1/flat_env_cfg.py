@@ -1,11 +1,12 @@
-from isaaclab.utils import configclass
 from whole_body_tracking.assets import ASSET_DIR
 from whole_body_tracking.robots.g1 import G1_CYLINDER_CFG
 from whole_body_tracking.tasks.tracking.tracking_env_cfg import TrackingEnvCfg
 
+from isaaclab.utils import configclass
+
 
 @configclass
-class HumanoidFlatEnvCfg(TrackingEnvCfg):
+class G1FlatEnvCfg(TrackingEnvCfg):
     def __post_init__(self):
         super().__post_init__()
 
@@ -19,57 +20,4 @@ class HumanoidFlatEnvCfg(TrackingEnvCfg):
                                            'left_shoulder_roll_link', 'left_elbow_link', 'left_wrist_yaw_link',
                                            'right_shoulder_roll_link', 'right_elbow_link', 'right_wrist_yaw_link']
 
-
-@configclass
-class G1FlatWalkEnvCfg(HumanoidFlatEnvCfg):
-    def __post_init__(self):
-        super().__post_init__()
         self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_walk_short.npz"
-        # self.commands.motion.pose_range = {"x": (-0.05, 0.05), "y": (-0.05, 0.05), "z": (-0.01, 0.01),
-        #                                    "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.2, 0.2)}
-        # self.commands.motion.velocity_range = {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
-        #                                        "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}
-        # self.events.push_robot.params = (
-        #     {"velocity_range": {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
-        #                         "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}})
-
-@configclass
-class G1FlatDanceEnvCfg(HumanoidFlatEnvCfg):
-    def __post_init__(self):
-        super().__post_init__()
-        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_dance_short.npz"
-
-
-@configclass
-class G1FlatJumpEnvCfg(HumanoidFlatEnvCfg):
-    def __post_init__(self):
-        super().__post_init__()
-        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_jump_short.npz"
-
-
-@configclass
-class G1FlatMoonWalkEnvCfg(HumanoidFlatEnvCfg):
-    def __post_init__(self):
-        super().__post_init__()
-        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_moonwalk.npz"
-
-
-@configclass
-class G1FlatRunEnvCfg(HumanoidFlatEnvCfg):
-    def __post_init__(self):
-        super().__post_init__()
-        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_run.npz"
-
-
-@configclass
-class G1FlatKungfuEnvCfg(HumanoidFlatEnvCfg):
-    def __post_init__(self):
-        super().__post_init__()
-        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_kungfu.npz"
-
-
-@configclass
-class G1FlatGetupEnvCfg(HumanoidFlatEnvCfg):
-    def __post_init__(self):
-        super().__post_init__()
-        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_getup.npz"

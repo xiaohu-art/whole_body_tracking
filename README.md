@@ -52,10 +52,12 @@ rm unitree_description.tar.gz
 python -m pip install -e source/whole_body_tracking
 ```
 
-- Verify that the extension is correctly installed by running the following command:
+- Train policy by the following command:
 
 ```bash
-python scripts/rsl_rl/train.py --task=Template-Isaac-Velocity-Rough-Anymal-D-v0
+python scripts/rsl_rl/train.py --task=Tracking-Flat-G1-v0 \
+env.commands.motion.motion_file=./source/whole_body_tracking/whole_body_tracking/assets/g1/motions/lafan_getup.npz \
+--headless --logger wandb --log_project_name tracking --run_name getup
 ```
 
 ### Set up IDE (Optional)
