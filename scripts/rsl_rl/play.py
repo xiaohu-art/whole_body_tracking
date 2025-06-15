@@ -43,13 +43,11 @@ import torch
 from rsl_rl.runners import OnPolicyRunner
 
 from isaaclab.envs import (
-    DirectMARLEnv,
     DirectMARLEnvCfg,
     DirectRLEnvCfg,
     ManagerBasedRLEnvCfg,
-    multi_agent_to_single_agent,
 )
-from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent, ManagerBasedRLEnv
+from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent
 from isaaclab.utils.dict import print_dict
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
 from isaaclab_tasks.utils import get_checkpoint_path, parse_env_cfg
@@ -57,8 +55,8 @@ from isaaclab_tasks.utils.hydra import hydra_task_config
 
 # Import extensions to set up environment tasks
 import whole_body_tracking.tasks  # noqa: F401
-from whole_body_tracking.tasks.tracking.mdp import MotionCommand
-from whole_body_tracking.tasks.tracking.exporter import export_motion_policy_as_onnx
+from whole_body_tracking.tasks.tracking.exporter import export_motion_policy_as_onnx, attach_onnx_metadata
+
 
 @hydra_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlOnPolicyRunnerCfg):
@@ -130,19 +128,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     # export policy to onnx/jit
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
 
-    unwrapped_env: ManagerBasedRLEnv = env.unwrapped
-    cmd: MotionCommand = unwrapped_env.command_manager.get_term("motion")
-    motions = {
-        "joint_pos": cmd.motion.joint_pos,
-        "joint_vel": cmd.motion.joint_vel,
-        "body_pos_w": cmd.motion.body_pos_w,
-        "body_quat_w": cmd.motion.body_quat_w,
-        "body_lin_vel_w": cmd.motion.body_lin_vel_w,
-        "body_ang_vel_w": cmd.motion.body_ang_vel_w,
-    }
-    export_motion_policy_as_onnx(motions, ppo_runner.alg.actor_critic, normalizer=ppo_runner.obs_normalizer,
+    export_motion_policy_as_onnx(env.unwrapped, ppo_runner.alg.actor_critic, normalizer=ppo_runner.obs_normalizer,
                                  path=export_model_dir, filename="policy.onnx")
-
+    attach_onnx_metadata(env.unwrapped, args_cli.wandb_path if args_cli.wandb_path else "none",
+                         os.path.join(export_model_dir, "policy.onnx"))
     # reset environment
     obs, _ = env.get_observations()
     timestep = 0

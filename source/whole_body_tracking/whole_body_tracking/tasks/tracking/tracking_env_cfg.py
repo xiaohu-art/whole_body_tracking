@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import MISSING
 
+import whole_body_tracking.tasks.tracking.mdp as mdp
+
+import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg
 from isaaclab.managers import EventTermCfg as EventTerm
@@ -12,14 +15,12 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sensors import ContactSensorCfg
-import isaaclab.sim as sim_utils
 from isaaclab.terrains import TerrainImporterCfg
 ##
 # Pre-defined configs
 ##
 from isaaclab.utils import configclass
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
-import whole_body_tracking.tasks.tracking.mdp as mdp
 
 ##
 # Scene definition
@@ -27,6 +28,8 @@ import whole_body_tracking.tasks.tracking.mdp as mdp
 
 VELOCITY_RANGE = {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
                   "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}
+
+
 # VELOCITY_RANGE = {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "z": (-0.2, 0.2),
 #                   "roll": (-0.52, 0.52), "pitch": (-0.52, 0.52), "yaw": (-0.78, 0.78)}
 
@@ -62,7 +65,8 @@ class MySceneCfg(InteractiveSceneCfg):
         prim_path="/World/skyLight",
         spawn=sim_utils.DomeLightCfg(color=(0.13, 0.13, 0.13), intensity=1000.0),
     )
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True,
+                                      force_threshold=10.0, debug_vis=True)
 
 
 ##
@@ -105,11 +109,10 @@ class ObservationsCfg:
 
         # observation terms (order preserved)
         command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"})
-        motion_pos_b = ObsTerm(func=mdp.motion_ref_pos_b, params={"command_name": "motion"},
+        motion_ref_pos_b = ObsTerm(func=mdp.motion_ref_pos_b, params={"command_name": "motion"},
                                noise=Unoise(n_min=-0.05, n_max=0.05))
-        motion_ori_b = ObsTerm(func=mdp.motion_ref_ori_b, params={"command_name": "motion"},
+        motion_ref_ori_b = ObsTerm(func=mdp.motion_ref_ori_b, params={"command_name": "motion"},
                                noise=Unoise(n_min=-0.05, n_max=0.05))
-        # projected_gravity = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.05, n_max=0.05))
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.5, n_max=0.5))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
@@ -123,8 +126,8 @@ class ObservationsCfg:
     @configclass
     class PrivilegedCfg(ObsGroup):
         command = ObsTerm(func=mdp.generated_commands, params={"command_name": "motion"})
-        motion_pos_b = ObsTerm(func=mdp.motion_ref_pos_b, params={"command_name": "motion"})
-        motion_ori_b = ObsTerm(func=mdp.motion_ref_ori_b, params={"command_name": "motion"})
+        motion_ref_pos_b = ObsTerm(func=mdp.motion_ref_pos_b, params={"command_name": "motion"})
+        motion_ref_ori_b = ObsTerm(func=mdp.motion_ref_ori_b, params={"command_name": "motion"})
         body_pos = ObsTerm(func=mdp.robot_body_pos_b, params={"command_name": "motion"})
         body_ori = ObsTerm(func=mdp.robot_body_ori_b, params={"command_name": "motion"})
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
