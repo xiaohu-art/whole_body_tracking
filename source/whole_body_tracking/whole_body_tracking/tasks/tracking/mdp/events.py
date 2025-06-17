@@ -26,6 +26,9 @@ def randomize_joint_default_pos(
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
 
+    # save nominal value for export
+    asset.data.default_joint_pos_nominal = torch.clone(asset.data.default_joint_pos[0])
+
     # resolve environment ids
     if env_ids is None:
         env_ids = torch.arange(env.scene.num_envs, device=asset.device)
@@ -45,3 +48,6 @@ def randomize_joint_default_pos(
         if env_ids != slice(None) and joint_ids != slice(None):
             env_ids = env_ids[:, None]
         asset.data.default_joint_pos[env_ids, joint_ids] = pos
+        # update the offset in action since it is not updated automatically
+        env.action_manager.get_term('joint_pos')._offset[env_ids, joint_ids] = pos
+
