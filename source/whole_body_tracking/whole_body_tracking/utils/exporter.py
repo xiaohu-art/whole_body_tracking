@@ -14,7 +14,8 @@ from isaaclab.envs import ManagerBasedRLEnv
 
 
 def export_motion_policy_as_onnx(
-        env: ManagerBasedRLEnv, actor_critic: object, path: str, normalizer: object | None = None, filename="policy.onnx",
+        env: ManagerBasedRLEnv, actor_critic: object, path: str, normalizer: object | None = None,
+        filename="policy.onnx",
         verbose=False
 ):
     if not os.path.exists(path):
@@ -73,15 +74,16 @@ def list_to_csv_str(arr, *, decimals: int = 3, delimiter: str = ",") -> str:
     )
 
 
-def attach_onnx_metadata(env: ManagerBasedRLEnv, run_path:str, onnx_path: str) -> None:
+def attach_onnx_metadata(env: ManagerBasedRLEnv, run_path: str, path: str, filename="policy.onnx") -> None:
+    onnx_path = os.path.join(path, filename)
     metadata = {"run_path": run_path,
-            "joint_names": env.scene["robot"].data.joint_names,
-            "joint_stiffness": env.scene["robot"].data.joint_stiffness[0].cpu().tolist(),
-            "joint_damping": env.scene["robot"].data.joint_damping[0].cpu().tolist(),
-            "default_joint_pos": env.scene["robot"].data.default_joint_pos_nominal.cpu().tolist(),
-            "command_names": env.command_manager.active_terms,
-            "observation_names": env.observation_manager.active_terms["policy"],
-            "action_scale": env.action_manager.get_term("joint_pos").cfg.scale}
+                "joint_names": env.scene["robot"].data.joint_names,
+                "joint_stiffness": env.scene["robot"].data.joint_stiffness[0].cpu().tolist(),
+                "joint_damping": env.scene["robot"].data.joint_damping[0].cpu().tolist(),
+                "default_joint_pos": env.scene["robot"].data.default_joint_pos_nominal.cpu().tolist(),
+                "command_names": env.command_manager.active_terms,
+                "observation_names": env.observation_manager.active_terms["policy"],
+                "action_scale": env.action_manager.get_term("joint_pos").cfg.scale}
 
     model = onnx.load(onnx_path)
 
