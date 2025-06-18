@@ -55,7 +55,7 @@ from isaaclab_tasks.utils.hydra import hydra_task_config
 
 # Import extensions to set up environment tasks
 import whole_body_tracking.tasks  # noqa: F401
-from whole_body_tracking.tasks.tracking.exporter import export_motion_policy_as_onnx, attach_onnx_metadata
+from whole_body_tracking.utils.exporter import export_motion_policy_as_onnx, attach_onnx_metadata
 
 
 @hydra_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
