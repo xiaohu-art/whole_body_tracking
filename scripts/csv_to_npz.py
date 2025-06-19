@@ -9,46 +9,22 @@
 
 """Launch Isaac Sim Simulator first."""
 
-
 import argparse
+
 import numpy as np
+
 from isaaclab.app import AppLauncher
 
 # add argparse arguments
-parser = argparse.ArgumentParser(
-    description="Replay motion from csv file and output to npz file."
-)
-parser.add_argument(
-    "--input_file",
-    type=str,
-    required=True,
-    help="The path to the input motion csv file.",
-)
-parser.add_argument(
-    "--input_fps",
-    type=int,
-    default=30,
-    help="The fps of the input motion.",
-)
-parser.add_argument(
-    "--line_range",
-    nargs=2,
-    type=int,
-    metavar=("START", "END"),
-    help="Line range: START END (both inclusive). The line index starts from 1. If not provided, all lines will be loaded.",
-)
-parser.add_argument(
-    "--output_file",
-    type=str,
-    required=True,
-    help="The path to store the motion npz file.",
-)
-parser.add_argument(
-    "--output_fps",
-    type=int,
-    default=50,
-    help="The fps of the output motion.",
-)
+parser = argparse.ArgumentParser(description="Replay motion from csv file and output to npz file.")
+parser.add_argument("--input_file", type=str, required=True, help="The path to the input motion csv file.")
+parser.add_argument("--input_fps", type=int, default=30, help="The fps of the input motion.")
+parser.add_argument("--line_range", nargs=2, type=int, metavar=("START", "END"),
+                    help="Line range: START END (both inclusive). The line index starts from 1. If not provided, all lines will be loaded.",
+                    )
+parser.add_argument("--output_name", type=str, required=True, help="The name of the motion npz file.")
+parser.add_argument("--output_fps", type=int, default=50, help="The fps of the output motion.")
+
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
@@ -105,12 +81,12 @@ class ReplayMotionsSceneCfg(InteractiveSceneCfg):
 
 class MotionLoader:
     def __init__(
-        self,
-        motion_file: str,
-        input_fps: int,
-        output_fps: int,
-        device: torch.device,
-        line_range: tuple[int, int] | None,
+            self,
+            motion_file: str,
+            input_fps: int,
+            output_fps: int,
+            device: torch.device,
+            line_range: tuple[int, int] | None,
     ):
         self.motion_file = motion_file
         self.input_fps = input_fps
@@ -140,9 +116,7 @@ class MotionLoader:
         motion = motion.to(torch.float32).to(self.device)
         self.motion_base_poss_input = motion[:, :3]
         self.motion_base_rots_input = motion[:, 3:7]
-        self.motion_base_rots_input = self.motion_base_rots_input[
-            :, [3, 0, 1, 2]
-        ]  # convert to wxyz
+        self.motion_base_rots_input = self.motion_base_rots_input[:, [3, 0, 1, 2]]  # convert to wxyz
         self.motion_dof_poss_input = motion[:, 7:]
 
         self.input_frames = motion.shape[0]
@@ -177,15 +151,11 @@ class MotionLoader:
             f"Motion interpolated, input frames: {self.input_frames}, input fps: {self.input_fps}, output frames: {self.output_frames}, output fps: {self.output_fps}"
         )
 
-    def _lerp(
-        self, a: torch.Tensor, b: torch.Tensor, blend: torch.Tensor
-    ) -> torch.Tensor:
+    def _lerp(self, a: torch.Tensor, b: torch.Tensor, blend: torch.Tensor) -> torch.Tensor:
         """Linear interpolation between two tensors."""
         return a * (1 - blend) + b * blend
 
-    def _slerp(
-        self, a: torch.Tensor, b: torch.Tensor, blend: torch.Tensor
-    ) -> torch.Tensor:
+    def _slerp(self, a: torch.Tensor, b: torch.Tensor, blend: torch.Tensor) -> torch.Tensor:
         """Spherical linear interpolation between two quaternions."""
         slerped_quats = torch.zeros_like(a)
         for i in range(a.shape[0]):
@@ -231,7 +201,7 @@ class MotionLoader:
         return omega
 
     def get_next_state(
-        self,
+            self,
     ) -> tuple[
         torch.Tensor,
         torch.Tensor,
@@ -242,12 +212,12 @@ class MotionLoader:
     ]:
         """Gets the next state of the motion."""
         state = (
-            self.motion_base_poss[self.current_idx : self.current_idx + 1],
-            self.motion_base_rots[self.current_idx : self.current_idx + 1],
-            self.motion_base_lin_vels[self.current_idx : self.current_idx + 1],
-            self.motion_base_ang_vels[self.current_idx : self.current_idx + 1],
-            self.motion_dof_poss[self.current_idx : self.current_idx + 1],
-            self.motion_dof_vels[self.current_idx : self.current_idx + 1],
+            self.motion_base_poss[self.current_idx: self.current_idx + 1],
+            self.motion_base_rots[self.current_idx: self.current_idx + 1],
+            self.motion_base_lin_vels[self.current_idx: self.current_idx + 1],
+            self.motion_base_ang_vels[self.current_idx: self.current_idx + 1],
+            self.motion_dof_poss[self.current_idx: self.current_idx + 1],
+            self.motion_dof_vels[self.current_idx: self.current_idx + 1],
         )
         self.current_idx += 1
         reset_flag = False
@@ -258,7 +228,7 @@ class MotionLoader:
 
 
 def run_simulator(
-    sim: sim_utils.SimulationContext, scene: InteractiveScene, joint_names: list[str]
+        sim: sim_utils.SimulationContext, scene: InteractiveScene, joint_names: list[str]
 ):
     """Runs the simulation loop."""
     # Load motion
@@ -337,17 +307,23 @@ def run_simulator(
         if reset_flag and not file_saved:
             file_saved = True
             for k in (
-                "joint_pos",
-                "joint_vel",
-                "body_pos_w",
-                "body_quat_w",
-                "body_lin_vel_w",
-                "body_ang_vel_w",
+                    "joint_pos",
+                    "joint_vel",
+                    "body_pos_w",
+                    "body_quat_w",
+                    "body_lin_vel_w",
+                    "body_ang_vel_w",
             ):
                 log[k] = np.stack(log[k], axis=0)
 
-            np.savez(args_cli.output_file, **log)
-            print(f"Saved trajectory to {args_cli.output_file}")
+            np.savez("/tmp/motion.npz", **log)
+
+            import wandb
+            COLLECTION = args_cli.output_name
+            run = wandb.init(project="csv_to_npz", name=COLLECTION)
+            REGISTRY = "motions"
+            logged_artifact = run.log_artifact(artifact_or_path="/tmp/motion.npz", name=COLLECTION, type=REGISTRY)
+            run.link_artifact(artifact=logged_artifact, target_path=f"wandb-registry-{REGISTRY}/{COLLECTION}")
 
 
 def main():

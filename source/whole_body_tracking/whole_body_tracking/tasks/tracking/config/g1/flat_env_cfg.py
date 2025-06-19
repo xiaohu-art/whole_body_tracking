@@ -19,5 +19,3 @@ class G1FlatEnvCfg(TrackingEnvCfg):
                                            'torso_link',
                                            'left_shoulder_roll_link', 'left_elbow_link', 'left_wrist_yaw_link',
                                            'right_shoulder_roll_link', 'right_elbow_link', 'right_wrist_yaw_link']
-
-        self.commands.motion.motion_file = f"{ASSET_DIR}/g1/motions/lafan_walk_short.npz"

@@ -56,8 +56,8 @@ python -m pip install -e source/whole_body_tracking
 
 ```bash
 python scripts/rsl_rl/train.py --task=Tracking-Flat-G1-v0 \
-env.commands.motion.motion_file=./source/whole_body_tracking/whole_body_tracking/assets/g1/motions/lafan_getup.npz \
---headless --logger wandb --log_project_name tracking --run_name getup
+--registry_name berkeley-humanoid-org/wandb-registry-motions/walk \
+--headless --logger wandb --log_project_name tracking --run_name cmu_40
 ```
 
 ### Set up IDE (Optional)
@@ -84,6 +84,20 @@ To enable your extension, follow these steps:
 2. **Search and enable your extension**:
     - Find your extension under the `Third Party` category.
     - Toggle it to enable your extension.
+
+## Converting and replaying Motions
+Convert retargeted motions (generalized coordinates only) to NPZ format that including the maximum coordinates information (body pose, body velocity, and body acceleration).
+By running the following command, you can convert the motion file `CMU-40_04.csv` to `cmu_40.npz` and upload it to the WandB registry:
+
+```bash
+python scripts/csv_to_npz.py --input_file ~/Downloads/CMU-40_04.csv --input_fps 50 --output_name cmu_40
+```
+
+Replay the motion in Isaac Sim using the following command:
+
+```bash
+python scripts/replay_npz.py --registry_name=berkeley-humanoid-org/wandb-registry-motions/cmu_40
+```
 
 ## Docker setup
 
