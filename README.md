@@ -56,8 +56,14 @@ python -m pip install -e source/whole_body_tracking
 
 ```bash
 python scripts/rsl_rl/train.py --task=Tracking-Flat-G1-v0 \
---registry_name berkeley-humanoid-org/wandb-registry-motions/walk \
+--registry_name berkeley-humanoid-org/wandb-registry-motions/cmu_40 \
 --headless --logger wandb --log_project_name tracking --run_name cmu_40
+```
+
+- Play the trained policy by the following command:
+
+```bash
+python scripts/rsl_rl/play.py --task=Tracking-Flat-G1-v0 --num_envs=2 --wandb_path=xxxxxx
 ```
 
 ### Set up IDE (Optional)
