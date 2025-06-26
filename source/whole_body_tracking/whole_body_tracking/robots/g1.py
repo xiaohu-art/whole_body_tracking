@@ -1,7 +1,14 @@
+from whole_body_tracking.assets import ASSET_DIR
+
+import isaaclab.sim as sim_utils
 from isaaclab.actuators import ImplicitActuatorCfg
 from isaaclab.assets.articulation import ArticulationCfg
-import isaaclab.sim as sim_utils
-from whole_body_tracking.assets import ASSET_DIR
+
+ARMATURE_5020 = 0.003609725
+ARMATURE_7520_14 = 0.010177520
+ARMATURE_7520_22 = 0.025101925
+ARMATURE_4010 = 0.00425
+
 
 G1_CYLINDER_CFG = ArticulationCfg(
     spawn=sim_utils.UrdfFileCfg(
@@ -73,21 +80,15 @@ G1_CYLINDER_CFG = ArticulationCfg(
                 ".*_knee_joint": 2.0,
             },
             armature={
-                ".*_hip_pitch_joint": 0.01017752004,
-                ".*_hip_roll_joint": 0.025101925,
-                ".*_hip_yaw_joint": 0.01017752004,
-                ".*_knee_joint": 0.025101925,
+                ".*_hip_pitch_joint": ARMATURE_7520_14,
+                ".*_hip_roll_joint": ARMATURE_7520_22,
+                ".*_hip_yaw_joint": ARMATURE_7520_14,
+                ".*_knee_joint": ARMATURE_7520_22,
             },
         ),
         "feet": ImplicitActuatorCfg(
-            effort_limit={
-                ".*_ankle_pitch_joint": 50.0,
-                ".*_ankle_roll_joint": 50.0,
-            },
-            velocity_limit={
-                ".*_ankle_pitch_joint": 37.0,
-                ".*_ankle_roll_joint": 37.0,
-            },
+            effort_limit=50.0,
+            velocity_limit=37.0,
             joint_names_expr=[".*_ankle_pitch_joint", ".*_ankle_roll_joint"],
             stiffness={".*_ankle_pitch_joint": 20.0, ".*_ankle_roll_joint": 20.0},
             damping={".*_ankle_pitch_joint": 2.0, ".*_ankle_roll_joint": 2.0},
@@ -95,7 +96,7 @@ G1_CYLINDER_CFG = ArticulationCfg(
         ),
         "waist": ImplicitActuatorCfg(
             effort_limit=50,
-            velocity_limit=32.0,
+            velocity_limit=37.0,
             joint_names_expr=["waist_roll_joint", "waist_pitch_joint"],
             stiffness=75.0,
             damping=2.0,
@@ -107,7 +108,7 @@ G1_CYLINDER_CFG = ArticulationCfg(
             joint_names_expr=["waist_yaw_joint"],
             stiffness=75.0,
             damping=2.0,
-            armature=0.01017752004,
+            armature=ARMATURE_7520_14,
         ),
         "arms": ImplicitActuatorCfg(
             joint_names_expr=[
@@ -156,13 +157,13 @@ G1_CYLINDER_CFG = ArticulationCfg(
                 ".*_wrist_yaw_joint": 0.2,
             },
             armature={
-                ".*_shoulder_pitch_joint": 0.003609725,
-                ".*_shoulder_roll_joint": 0.003609725,
-                ".*_shoulder_yaw_joint": 0.003609725,
-                ".*_elbow_joint": 0.003609725,
-                ".*_wrist_roll_joint": 0.003609725,
-                ".*_wrist_pitch_joint": 0.00425,
-                ".*_wrist_yaw_joint": 0.00425,
+                ".*_shoulder_pitch_joint": ARMATURE_5020,
+                ".*_shoulder_roll_joint": ARMATURE_5020,
+                ".*_shoulder_yaw_joint": ARMATURE_5020,
+                ".*_elbow_joint": ARMATURE_5020,
+                ".*_wrist_roll_joint": ARMATURE_5020,
+                ".*_wrist_pitch_joint": ARMATURE_4010,
+                ".*_wrist_yaw_joint": ARMATURE_4010,
             },
         ),
     },
