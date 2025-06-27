@@ -9,6 +9,18 @@ ARMATURE_7520_14 = 0.010177520
 ARMATURE_7520_22 = 0.025101925
 ARMATURE_4010 = 0.00425
 
+NATURAL_FREQ = 10 * 2.0 * 3.1415926535  # 10Hz
+DAMPING_RATIO = 2.0
+
+STIFFNESS_5020 = ARMATURE_5020 * NATURAL_FREQ ** 2
+STIFFNESS_7520_14 = ARMATURE_7520_14 * NATURAL_FREQ ** 2
+STIFFNESS_7520_22 = ARMATURE_7520_22 * NATURAL_FREQ ** 2
+STIFFNESS_4010 = ARMATURE_4010 * NATURAL_FREQ ** 2
+
+DAMPING_5020 = 2.0 * DAMPING_RATIO * ARMATURE_5020 * NATURAL_FREQ
+DAMPING_7520_14 = 2.0 * DAMPING_RATIO * ARMATURE_7520_14 * NATURAL_FREQ
+DAMPING_7520_22 = 2.0 * DAMPING_RATIO * ARMATURE_7520_22 * NATURAL_FREQ
+DAMPING_4010 = 2.0 * DAMPING_RATIO * ARMATURE_4010 * NATURAL_FREQ
 
 G1_CYLINDER_CFG = ArticulationCfg(
     spawn=sim_utils.UrdfFileCfg(
@@ -68,16 +80,16 @@ G1_CYLINDER_CFG = ArticulationCfg(
                 ".*_knee_joint": 20.0,
             },
             stiffness={
-                ".*_hip_yaw_joint": 75.0,
-                ".*_hip_roll_joint": 75.0,
-                ".*_hip_pitch_joint": 75.0,
-                ".*_knee_joint": 75.0,
+                ".*_hip_pitch_joint": STIFFNESS_7520_14,
+                ".*_hip_roll_joint": STIFFNESS_7520_22,
+                ".*_hip_yaw_joint": STIFFNESS_7520_14,
+                ".*_knee_joint": STIFFNESS_7520_22,
             },
             damping={
-                ".*_hip_yaw_joint": 2.0,
-                ".*_hip_roll_joint": 2.0,
-                ".*_hip_pitch_joint": 2.0,
-                ".*_knee_joint": 2.0,
+                ".*_hip_pitch_joint": DAMPING_7520_14,
+                ".*_hip_roll_joint": DAMPING_7520_22,
+                ".*_hip_yaw_joint": DAMPING_7520_14,
+                ".*_knee_joint": DAMPING_7520_22,
             },
             armature={
                 ".*_hip_pitch_joint": ARMATURE_7520_14,
@@ -90,24 +102,24 @@ G1_CYLINDER_CFG = ArticulationCfg(
             effort_limit=50.0,
             velocity_limit=37.0,
             joint_names_expr=[".*_ankle_pitch_joint", ".*_ankle_roll_joint"],
-            stiffness={".*_ankle_pitch_joint": 20.0, ".*_ankle_roll_joint": 20.0},
-            damping={".*_ankle_pitch_joint": 2.0, ".*_ankle_roll_joint": 2.0},
-            armature={".*_ankle_pitch_joint": 0.00721945, ".*_ankle_roll_joint": 0.00721945},
+            stiffness=2.0 * STIFFNESS_5020,
+            damping=2.0 * DAMPING_5020,
+            armature=2.0 * ARMATURE_5020,
         ),
         "waist": ImplicitActuatorCfg(
             effort_limit=50,
             velocity_limit=37.0,
             joint_names_expr=["waist_roll_joint", "waist_pitch_joint"],
-            stiffness=75.0,
-            damping=2.0,
-            armature=0.00721945,
+            stiffness=2.0 * STIFFNESS_5020,
+            damping=2.0 * DAMPING_5020,
+            armature=2.0 * ARMATURE_5020,
         ),
         "waist_yaw": ImplicitActuatorCfg(
             effort_limit=88,
             velocity_limit=32.0,
             joint_names_expr=["waist_yaw_joint"],
-            stiffness=75.0,
-            damping=2.0,
+            stiffness=STIFFNESS_7520_14,
+            damping=DAMPING_7520_14,
             armature=ARMATURE_7520_14,
         ),
         "arms": ImplicitActuatorCfg(
@@ -139,22 +151,22 @@ G1_CYLINDER_CFG = ArticulationCfg(
                 ".*_wrist_yaw_joint": 22.0,
             },
             stiffness={
-                ".*_shoulder_pitch_joint": 75.0,
-                ".*_shoulder_roll_joint": 75.0,
-                ".*_shoulder_yaw_joint": 75.0,
-                ".*_elbow_joint": 75.0,
-                ".*_wrist_roll_joint": 2.0,
-                ".*_wrist_pitch_joint": 2.0,
-                ".*_wrist_yaw_joint": 2.0,
+                ".*_shoulder_pitch_joint": STIFFNESS_5020,
+                ".*_shoulder_roll_joint": STIFFNESS_5020,
+                ".*_shoulder_yaw_joint": STIFFNESS_5020,
+                ".*_elbow_joint": STIFFNESS_5020,
+                ".*_wrist_roll_joint": STIFFNESS_5020,
+                ".*_wrist_pitch_joint": STIFFNESS_4010,
+                ".*_wrist_yaw_joint": STIFFNESS_4010,
             },
             damping={
-                ".*_shoulder_pitch_joint": 2.0,
-                ".*_shoulder_roll_joint": 2.0,
-                ".*_shoulder_yaw_joint": 2.0,
-                ".*_elbow_joint": 2.0,
-                ".*_wrist_roll_joint": 0.2,
-                ".*_wrist_pitch_joint": 0.2,
-                ".*_wrist_yaw_joint": 0.2,
+                ".*_shoulder_pitch_joint": DAMPING_5020,
+                ".*_shoulder_roll_joint": DAMPING_5020,
+                ".*_shoulder_yaw_joint": DAMPING_5020,
+                ".*_elbow_joint": DAMPING_5020,
+                ".*_wrist_roll_joint": DAMPING_5020,
+                ".*_wrist_pitch_joint": DAMPING_4010,
+                ".*_wrist_yaw_joint": DAMPING_4010,
             },
             armature={
                 ".*_shoulder_pitch_joint": ARMATURE_5020,
