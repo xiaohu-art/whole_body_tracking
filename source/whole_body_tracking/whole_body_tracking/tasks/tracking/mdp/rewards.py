@@ -13,106 +13,56 @@ if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
 
-def motion_global_ref_position_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
-    command: MotionCommand = env.command_manager.get_term(command_name)
-    return torch.norm(command.ref_pos_w - command.robot_ref_pos_w, dim=-1)
+def _get_body_indexes(command: MotionCommand, body_names: Optional[list[str]]) -> list[int]:
+    return [i for i, name in enumerate(command.cfg.body_names) if (body_names is None) or (name in body_names)]
 
 
 def motion_global_ref_position_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
-    return torch.exp(-motion_global_ref_position_error(env, command_name) ** 2 / std ** 2)
-
-
-def motion_global_ref_orientation_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
-    return quat_error_magnitude(command.ref_quat_w, command.robot_ref_quat_w)
+    error = torch.sum(torch.square(command.ref_pos_w - command.robot_ref_pos_w), dim=-1)
+    return torch.exp(-error / std ** 2)
 
 
 def motion_global_ref_orientation_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
-    return torch.exp(-motion_global_ref_orientation_error(env, command_name) ** 2 / std ** 2)
-
-
-def motion_relative_body_position_error(env: ManagerBasedRLEnv, command_name: str,
-                                        body_names: list[str] | None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
-    if body_names is None:
-        body_indexes = list(range(len(command.cfg.body_names)))
-    else:
-        body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
-
-    return torch.norm(command.body_pos_relative_w[:, body_indexes] -
-                      command.robot_body_pos_w[:, body_indexes], dim=-1).mean(-1)
+    error = quat_error_magnitude(command.ref_quat_w, command.robot_ref_quat_w) ** 2
+    return torch.exp(-error / std ** 2)
 
 
 def motion_relative_body_position_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
                                             body_names: Optional[list[str]] = None) -> torch.Tensor:
-    return torch.exp(-motion_relative_body_position_error(env, command_name, body_names) ** 2 / std ** 2)
-
-
-def motion_relative_body_orientation_error(env: ManagerBasedRLEnv, command_name: str,
-                                           body_names: list[str] | None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
-    if body_names is None:
-        body_indexes = list(range(len(command.cfg.body_names)))
-    else:
-        body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
-
-    return quat_error_magnitude(command.body_quat_relative_w[:, body_indexes],
-                                command.robot_body_quat_w[:, body_indexes]).mean(-1)
+    body_indexes = _get_body_indexes(command, body_names)
+    error = torch.sum(torch.square(command.body_pos_relative_w[:, body_indexes] -
+                                   command.robot_body_pos_w[:, body_indexes]), dim=-1)
+    return torch.exp(-error / std ** 2).mean(-1)
 
 
 def motion_relative_body_orientation_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
                                                body_names: Optional[list[str]] = None) -> torch.Tensor:
-    return torch.exp(-motion_relative_body_orientation_error(env, command_name, body_names) ** 2 / std ** 2)
-
-
-def motion_global_body_linear_velocity_error(env: ManagerBasedRLEnv, command_name: str,
-                                             body_names: list[str] | None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
-    if body_names is None:
-        body_indexes = list(range(len(command.cfg.body_names)))
-    else:
-        body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
-    return (torch.norm(command.body_lin_vel_w[:, body_indexes] - command.robot_body_lin_vel_w[:, body_indexes],
-                       dim=-1).mean(-1))
+    body_indexes = _get_body_indexes(command, body_names)
+    error = quat_error_magnitude(command.body_quat_relative_w[:, body_indexes],
+                                 command.robot_body_quat_w[:, body_indexes]) ** 2
+    return torch.exp(-error / std ** 2).mean(-1)
 
 
 def motion_global_body_linear_velocity_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
                                                  body_names: Optional[list[str]] = None) -> torch.Tensor:
-    return torch.exp(-motion_global_body_linear_velocity_error(env, command_name, body_names) ** 2 / std ** 2)
-
-
-def motion_global_body_angular_velocity_error(env: ManagerBasedRLEnv, command_name: str,
-                                              body_names: list[str] | None) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
-    if body_names is None:
-        body_indexes = list(range(len(command.cfg.body_names)))
-    else:
-        body_indexes = [i for i, body_name in enumerate(command.cfg.body_names) if body_name in body_names]
-    return (torch.norm(command.body_ang_vel_w[:, body_indexes] - command.robot_body_ang_vel_w[:, body_indexes],
-                       dim=-1).mean(-1))
+    body_indexes = _get_body_indexes(command, body_names)
+    error = torch.sum(torch.square(command.body_lin_vel_w[:, body_indexes] -
+                                   command.robot_body_lin_vel_w[:, body_indexes]), dim=-1)
+    return torch.exp(-error / std ** 2).mean(-1)
 
 
 def motion_global_body_angular_velocity_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
                                                   body_names: Optional[list[str]] = None) -> torch.Tensor:
-    return torch.exp(-motion_global_body_angular_velocity_error(env, command_name, body_names) ** 2 / std ** 2)
-
-
-def motion_joint_pos_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
-    return torch.norm(command.joint_pos - command.robot_joint_pos, dim=-1)
-
-
-def motion_joint_pos_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
-    return torch.exp(-motion_joint_pos_error(env, command_name) ** 2 / std ** 2)
-
-
-def motion_joint_vel_error(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
-    command: MotionCommand = env.command_manager.get_term(command_name)
-    return torch.norm(command.joint_vel - command.robot_joint_vel, dim=-1)
-
-
-def motion_joint_vel_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float) -> torch.Tensor:
-    return torch.exp(-motion_joint_vel_error(env, command_name) ** 2 / std ** 2)
+    body_indexes = _get_body_indexes(command, body_names)
+    error = torch.sum(torch.square(command.body_ang_vel_w[:, body_indexes] -
+                                   command.robot_body_ang_vel_w[:, body_indexes]), dim=-1)
+    return torch.exp(-error / std ** 2).mean(-1)
 
 
 def feet_contact_time(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, threshold: float) -> torch.Tensor:
