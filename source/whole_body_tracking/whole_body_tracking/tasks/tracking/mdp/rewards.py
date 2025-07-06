@@ -35,7 +35,7 @@ def motion_relative_body_position_error_exp(env: ManagerBasedRLEnv, command_name
     body_indexes = _get_body_indexes(command, body_names)
     error = torch.sum(torch.square(command.body_pos_relative_w[:, body_indexes] -
                                    command.robot_body_pos_w[:, body_indexes]), dim=-1)
-    return torch.exp(-error / std ** 2).mean(-1)
+    return torch.exp(-error.mean(-1) / std ** 2)
 
 
 def motion_relative_body_orientation_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
@@ -44,7 +44,7 @@ def motion_relative_body_orientation_error_exp(env: ManagerBasedRLEnv, command_n
     body_indexes = _get_body_indexes(command, body_names)
     error = quat_error_magnitude(command.body_quat_relative_w[:, body_indexes],
                                  command.robot_body_quat_w[:, body_indexes]) ** 2
-    return torch.exp(-error / std ** 2).mean(-1)
+    return torch.exp(-error.mean(-1) / std ** 2)
 
 
 def motion_global_body_linear_velocity_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
@@ -53,7 +53,7 @@ def motion_global_body_linear_velocity_error_exp(env: ManagerBasedRLEnv, command
     body_indexes = _get_body_indexes(command, body_names)
     error = torch.sum(torch.square(command.body_lin_vel_w[:, body_indexes] -
                                    command.robot_body_lin_vel_w[:, body_indexes]), dim=-1)
-    return torch.exp(-error / std ** 2).mean(-1)
+    return torch.exp(-error.mean(-1) / std ** 2)
 
 
 def motion_global_body_angular_velocity_error_exp(env: ManagerBasedRLEnv, command_name: str, std: float,
@@ -62,7 +62,7 @@ def motion_global_body_angular_velocity_error_exp(env: ManagerBasedRLEnv, comman
     body_indexes = _get_body_indexes(command, body_names)
     error = torch.sum(torch.square(command.body_ang_vel_w[:, body_indexes] -
                                    command.robot_body_ang_vel_w[:, body_indexes]), dim=-1)
-    return torch.exp(-error / std ** 2).mean(-1)
+    return torch.exp(-error.mean(-1) / std ** 2)
 
 
 def feet_contact_time(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, threshold: float) -> torch.Tensor:
