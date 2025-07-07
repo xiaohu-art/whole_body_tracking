@@ -205,18 +205,6 @@ class RewardsCfg:
         func=mdp.motion_relative_body_orientation_error_exp, weight=1.0,
         params={"command_name": "motion", "std": 0.4},
     )
-    motion_ee_pos = RewTerm(
-        func=mdp.motion_relative_body_position_error_exp, weight=1.0,
-        params={"command_name": "motion", "std": 0.15,
-                "body_names": ['left_ankle_roll_link', 'right_ankle_roll_link',
-                               'left_wrist_yaw_link', 'right_wrist_yaw_link']},
-    )
-    motion_ee_ori = RewTerm(
-        func=mdp.motion_relative_body_orientation_error_exp, weight=1.0,
-        params={"command_name": "motion", "std": 0.2,
-                "body_names": ['left_ankle_roll_link', 'right_ankle_roll_link',
-                               'left_wrist_yaw_link', 'right_wrist_yaw_link']},
-    )
     motion_body_lin_vel = RewTerm(
         func=mdp.motion_global_body_linear_velocity_error_exp, weight=1.0,
         params={"command_name": "motion", "std": 1.0},
@@ -244,6 +232,12 @@ class TerminationsCfg:
     ref_ori = DoneTerm(
         func=mdp.bad_ref_ori,
         params={"asset_cfg": SceneEntityCfg("robot"), "command_name": "motion", "threshold": 0.8},
+    )
+    ee_body_pos = DoneTerm(
+        func=mdp.bad_motion_body_pos,
+        params={"command_name": "motion", "threshold": 0.25,
+                "body_names": ['left_ankle_roll_link', 'right_ankle_roll_link',
+                               'left_wrist_yaw_link', 'right_wrist_yaw_link']},
     )
 
 

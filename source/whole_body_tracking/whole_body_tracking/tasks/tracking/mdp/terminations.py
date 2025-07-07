@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 import torch
 
@@ -10,6 +10,8 @@ if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
 from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
+from whole_body_tracking.tasks.tracking.mdp.rewards import _get_body_indexes
+
 from isaaclab.assets import Articulation, RigidObject
 from isaaclab.managers import SceneEntityCfg
 
@@ -30,16 +32,11 @@ def bad_ref_ori(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg, command_name:
     return (motion_projected_gravity_b[:, 2] - robot_projected_gravity_b[:, 2]).abs() > threshold
 
 
-def bh_joint_pos_out_of_limit(env: ManagerBasedRLEnv,
-                              asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """Terminate when the asset's joint positions are outside of the soft joint limits."""
-    # extract the used quantities (to enable type-hinting)
-    asset: Articulation = env.scene[asset_cfg.name]
-    # compute any violations
-    out_of_upper_limits = torch.any(
-        asset.data.joint_pos[:, asset_cfg.joint_ids] > asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids, 1],
-        dim=1)
-    out_of_lower_limits = torch.any(
-        asset.data.joint_pos[:, asset_cfg.joint_ids] < asset.data.soft_joint_pos_limits[:, asset_cfg.joint_ids, 0],
-        dim=1)
-    return torch.logical_or(out_of_upper_limits, out_of_lower_limits)
+def bad_motion_body_pos(env: ManagerBasedRLEnv, command_name: str, threshold: float,
+                        body_names: Optional[list[str]] = None
+                        ) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+
+    body_indexes = _get_body_indexes(command, body_names)
+    error = torch.norm(command.body_pos_relative_w[:, body_indexes] - command.robot_body_pos_w[:, body_indexes], dim=-1)
+    return torch.any(error > threshold, dim=-1)
