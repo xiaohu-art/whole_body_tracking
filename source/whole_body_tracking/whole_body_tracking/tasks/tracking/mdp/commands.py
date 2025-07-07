@@ -225,10 +225,13 @@ class MotionCommand(CommandTerm):
         robot_ref_pos_w_repeat = self.robot_ref_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
         robot_ref_quat_w_repeat = self.robot_ref_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
 
+        delta_pos_w = ref_pos_w_repeat - robot_ref_pos_w_repeat
+        delta_pos_w[..., :2] = 0.0
         delta_ori_w = yaw_quat(quat_mul(robot_ref_quat_w_repeat, quat_inv(ref_quat_w_repeat)))
 
         self.body_quat_relative_w = quat_mul(delta_ori_w, self.body_quat_w)
-        self.body_pos_relative_w = robot_ref_pos_w_repeat + quat_apply(delta_ori_w, self.body_pos_w - ref_pos_w_repeat)
+        self.body_pos_relative_w = (robot_ref_pos_w_repeat + delta_pos_w
+                                    + quat_apply(delta_ori_w, self.body_pos_w - ref_pos_w_repeat))
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
