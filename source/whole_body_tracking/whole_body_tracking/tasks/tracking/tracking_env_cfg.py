@@ -218,6 +218,13 @@ class RewardsCfg:
         func=mdp.joint_pos_limits, weight=-100.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"])},
     )
+    undesired_contacts = RewTerm(
+        func=mdp.undesired_contacts,
+        weight=-0.5,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[
+            r"^(?!left_ankle_roll_link$)(?!right_ankle_roll_link$)(?!left_wrist_yaw_link$)(?!right_wrist_yaw_link$).+$"]),
+                "threshold": 1.0},
+    )
 
 
 @configclass
