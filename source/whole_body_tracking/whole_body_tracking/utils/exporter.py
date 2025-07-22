@@ -83,7 +83,7 @@ def attach_onnx_metadata(env: ManagerBasedRLEnv, run_path: str, path: str, filen
                 "default_joint_pos": env.scene["robot"].data.default_joint_pos_nominal.cpu().tolist(),
                 "command_names": env.command_manager.active_terms,
                 "observation_names": env.observation_manager.active_terms["policy"],
-                "action_scale": env.action_manager.get_term("joint_pos").cfg.scale}
+                "action_scale": env.action_manager.get_term("joint_pos")._scale[0].cpu().tolist()}
 
     model = onnx.load(onnx_path)
 
