@@ -26,12 +26,12 @@ from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 # Scene definition
 ##
 
-VELOCITY_RANGE = {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
-                  "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}
+# VELOCITY_RANGE = {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
+#                   "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}
 
 
-# VELOCITY_RANGE = {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "z": (-0.2, 0.2),
-#                   "roll": (-0.52, 0.52), "pitch": (-0.52, 0.52), "yaw": (-0.78, 0.78)}
+VELOCITY_RANGE = {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "z": (-0.2, 0.2),
+                  "roll": (-0.52, 0.52), "pitch": (-0.52, 0.52), "yaw": (-0.78, 0.78)}
 
 
 @configclass
@@ -180,12 +180,12 @@ class EventCfg:
     )
 
     # interval
-    # push_robot = EventTerm(
-    #     func=mdp.push_by_setting_velocity,
-    #     mode="interval",
-    #     interval_range_s=(0.5, 1.0),
-    #     params={"velocity_range": VELOCITY_RANGE},
-    # )
+    push_robot = EventTerm(
+        func=mdp.push_by_setting_velocity,
+        mode="interval",
+        interval_range_s=(1.0, 3.0),
+        params={"velocity_range": VELOCITY_RANGE},
+    )
 
 
 @configclass
@@ -222,7 +222,7 @@ class RewardsCfg:
     )
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
-        weight=-0.5,
+        weight=-0.1,
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[
             r"^(?!left_ankle_roll_link$)(?!right_ankle_roll_link$)(?!left_wrist_yaw_link$)(?!right_wrist_yaw_link$).+$"]),
                 "threshold": 1.0},
@@ -235,8 +235,8 @@ class TerminationsCfg:
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     ref_pos = DoneTerm(
-        func=mdp.bad_ref_pos,
-        params={"command_name": "motion", "threshold": 0.5},
+        func=mdp.bad_ref_pos_z_only,
+        params={"command_name": "motion", "threshold": 0.25},
     )
     ref_ori = DoneTerm(
         func=mdp.bad_ref_ori,

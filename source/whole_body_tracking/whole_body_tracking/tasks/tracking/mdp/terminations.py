@@ -21,6 +21,11 @@ def bad_ref_pos(env: ManagerBasedRLEnv, command_name: str, threshold: float) -> 
     return torch.norm(command.ref_pos_w - command.robot_ref_pos_w, dim=1) > threshold
 
 
+def bad_ref_pos_z_only(env: ManagerBasedRLEnv, command_name: str, threshold: float) -> torch.Tensor:
+    command: MotionCommand = env.command_manager.get_term(command_name)
+    return torch.abs(command.ref_pos_w[:, -1] - command.robot_ref_pos_w[:, -1]) > threshold
+
+
 def bad_ref_ori(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg, command_name: str, threshold: float) -> torch.Tensor:
     asset: RigidObject | Articulation = env.scene[asset_cfg.name]
 
