@@ -49,7 +49,7 @@ import os
 import torch
 from datetime import datetime
 
-from whole_body_tracking.utils.my_on_policy_runner import MyOnPolicyRunner as OnPolicyRunner
+from whole_body_tracking.utils.my_on_policy_runner import MotionOnPolicyRunner as OnPolicyRunner
 
 from isaaclab.envs import (
     DirectMARLEnv,
