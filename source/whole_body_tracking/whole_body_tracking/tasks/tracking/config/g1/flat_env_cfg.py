@@ -19,3 +19,10 @@ class G1FlatEnvCfg(TrackingEnvCfg):
                                            'torso_link',
                                            'left_shoulder_roll_link', 'left_elbow_link', 'left_wrist_yaw_link',
                                            'right_shoulder_roll_link', 'right_elbow_link', 'right_wrist_yaw_link']
+
+@configclass
+class G1FlatWoStateEstimationEnvCfg(G1FlatEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.observations.policy.motion_ref_pos_b = None
+        self.observations.policy.base_lin_vel = None
