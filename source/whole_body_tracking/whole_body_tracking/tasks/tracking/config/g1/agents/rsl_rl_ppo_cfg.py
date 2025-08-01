@@ -1,5 +1,6 @@
-from isaaclab.utils import configclass
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
+
+from isaaclab.utils import configclass
 
 
 @configclass
@@ -29,3 +30,15 @@ class G1FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         desired_kl=0.01,
         max_grad_norm=1.0,
     )
+
+
+LOW_FREQ_SCALE = 0.5
+
+
+@configclass
+class G1FlatLowFreqPPORunnerCfg(G1FlatPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.num_steps_per_env = int(self.num_steps_per_env * LOW_FREQ_SCALE)
+        self.algorithm.gamma = self.algorithm.gamma ** (1 / LOW_FREQ_SCALE)
+        self.algorithm.lam = self.algorithm.lam ** (1 / LOW_FREQ_SCALE)

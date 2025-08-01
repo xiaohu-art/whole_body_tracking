@@ -20,9 +20,21 @@ class G1FlatEnvCfg(TrackingEnvCfg):
                                            'left_shoulder_roll_link', 'left_elbow_link', 'left_wrist_yaw_link',
                                            'right_shoulder_roll_link', 'right_elbow_link', 'right_wrist_yaw_link']
 
+
 @configclass
 class G1FlatWoStateEstimationEnvCfg(G1FlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.observations.policy.motion_ref_pos_b = None
         self.observations.policy.base_lin_vel = None
+
+
+LOW_FREQ_SCALE = 0.5
+
+
+@configclass
+class G1FlatLowFreqEnvCfg(G1FlatEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.decimation = int(self.decimation / LOW_FREQ_SCALE)
+        self.rewards.action_rate_l2.weight *= LOW_FREQ_SCALE
