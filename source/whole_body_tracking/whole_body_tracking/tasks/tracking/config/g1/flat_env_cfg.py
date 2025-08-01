@@ -36,5 +36,5 @@ LOW_FREQ_SCALE = 0.5
 class G1FlatLowFreqEnvCfg(G1FlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
-        self.decimation = int(self.decimation / LOW_FREQ_SCALE)
+        self.decimation = round(self.decimation / LOW_FREQ_SCALE)
         self.rewards.action_rate_l2.weight *= LOW_FREQ_SCALE
