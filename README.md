@@ -1,4 +1,4 @@
-# Template for Isaac Lab Projects
+# BeyondMimic Simulation Framework
 
 [![IsaacSim](https://img.shields.io/badge/IsaacSim-4.5.0-silver.svg)](https://docs.omniverse.nvidia.com/isaacsim/latest/overview.html)
 [![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.1.0-silver)](https://isaac-sim.github.io/IsaacLab)
@@ -10,32 +10,27 @@
 
 ## Overview
 
-This repository serves as a template for building projects or extensions based on Isaac Lab. It allows you to develop in an isolated environment, outside of the core Isaac Lab repository.
+BeyondMimic is a versatile humanoid control framework that provides highly-dynamic motion tracking with the state-of-the-art motion quality on real-world deployment and steerable test-time control with guided diffusion-based controllers. This repo covers the simulator-related framework in BeyondMimic, which is used to train the motion tracking policies, as well as data collection for the diffusion training. 
 
 **Key Features:**
 
-- `Isolation` Work outside the core Isaac Lab repository, ensuring that your development efforts remain self-contained.
-- `Flexibility` This template is set up to allow your code to be run as an extension in Omniverse.
+- `Motion Registry` In order to manage the large set of motions we used in this work, we leverage WandB registry feature to store and load reference motions automatically.  
 
-**Keywords:** extension, template, isaaclab
 
 ## Installation
 
 - Install Isaac Lab by following the [installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html). We recommend using the conda installation as it simplifies calling Python scripts from the terminal.
 
-- Clone this repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
+- **This repo uses git-lfs to store usd. You need to install [git-lfs](https://git-lfs.com/)**. 
 
-- **This repo uses git-lfs to store usd. You need to install [git-lfs](https://git-lfs.com/)**. (TODO: put motion to GCS)
+- Clone this repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
 
 ```bash
 # Option 1: HTTPS
 git clone https://github.com/qiayuanl/whole_body_tracking.git
-
-# Option 2: SSH
-git clone git@github.com:qiayuanl/whole_body_tracking.git
 ```
 
-- Pull the robot description files (TODO: as well as motion files)
+- Pull the robot description files
 
 ```bash
 # Enter the repository
@@ -52,20 +47,64 @@ rm unitree_description.tar.gz
 python -m pip install -e source/whole_body_tracking
 ```
 
-- Train policy by the following command:
+## Motion Tracking
+
+### Motion Preprocessing & Registry Setup
+Note: The reference motion should be retargeted and use generalized coordinates only. 
+
+- Gather the reference motion datasets (please follow the original licenses)
+    
+    - Unitree-retargeted LAFAN1 Dataset is available on [HuggingFace](https://huggingface.co/datasets/lvhaidong/LAFAN1_Retargeting_Dataset)
+    - Sidekicks are from [KungfuBot](https://kungfu-bot.github.io/)
+    - Christiano Ronaldo celebration is from [ASAP](https://github.com/LeCAR-Lab/ASAP). 
+    - Balance motions are from [HuB](https://hub-robot.github.io/)
+
+
+- Log in to your WandB account; access Registry under Core on the left. Create a new registry with name "Motions" and artifact type "All Types". 
+
+- Update the WandB api to at least 0.19
+```bash
+python -m pip install wandb==0.19
+```
+
+- Convert retargeted motions to include the maximum coordinates information (body pose, body velocity, and body acceleration) via forward kinematics,
 
 ```bash
-python scripts/rsl_rl/train.py --task=Tracking-Flat-G1-v0 \
---registry_name berkeley-humanoid-org/wandb-registry-motions/cmu_40 \
---headless --logger wandb --log_project_name tracking --run_name cmu_40
+python scripts/csv_to_npz.py --input_file {motion_name}.csv --input_fps 30 --output_name {motion_name}
 ```
+
+This will automatically upload the processed motion file to WandB registry with output name {motion_name}. 
+
+
+- Test if WandB registry works properly by replaying the motion in Isaac Sim:
+
+```bash
+python scripts/replay_npz.py --registry_name={your-organization}-org/wandb-registry-motions/{motion_name}
+```
+
+- Debugging
+    - Make sure to export WANDB_ENTITY to your organization name, not your personal username. 
+    - If /tmp folder is not accessible, modify csv_to_npz.py L319 & L326 to a temporary folder of your choice. 
+
+### Policy Training
+- Train policy by the following command:
+```bash
+python scripts/rsl_rl/train.py --task=Tracking-Flat-G1-v0 \
+--registry_name {your-organization}-org/wandb-registry-motions/{motion_name} \
+--headless --logger wandb --log_project_name {project_name} --run_name {run_name}
+```
+
+### Policy Evaluation
+
 
 - Play the trained policy by the following command:
 
 ```bash
-python scripts/rsl_rl/play.py --task=Tracking-Flat-G1-v0 --num_envs=2 --wandb_path=xxxxxx
+python scripts/rsl_rl/play.py --task=Tracking-Flat-G1-v0 --num_envs=2 --wandb_path={wandb-run-path}
 ```
 
+The WandB run path can be located in the run overview. It follows the format {your_organization}/{project_name}/ along with a unique 8-character identifier. Note that run_name is different from run_path. 
+ 
 ### Set up IDE (Optional)
 
 To setup the IDE, please follow these instructions:
@@ -90,20 +129,6 @@ To enable your extension, follow these steps:
 2. **Search and enable your extension**:
     - Find your extension under the `Third Party` category.
     - Toggle it to enable your extension.
-
-## Converting and replaying Motions
-Convert retargeted motions (generalized coordinates only) to NPZ format that including the maximum coordinates information (body pose, body velocity, and body acceleration).
-By running the following command, you can convert the motion file `CMU-40_04.csv` to `cmu_40.npz` and upload it to the WandB registry:
-
-```bash
-python scripts/csv_to_npz.py --input_file ~/Downloads/CMU-40_04.csv --input_fps 50 --output_name cmu_40
-```
-
-Replay the motion in Isaac Sim using the following command:
-
-```bash
-python scripts/replay_npz.py --registry_name=berkeley-humanoid-org/wandb-registry-motions/cmu_40
-```
 
 ## Docker setup
 
