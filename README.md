@@ -12,16 +12,12 @@
 
 BeyondMimic is a versatile humanoid control framework that provides highly-dynamic motion tracking with the state-of-the-art motion quality on real-world deployment and steerable test-time control with guided diffusion-based controllers. This repo covers the simulator-related framework in BeyondMimic, which is used to train the motion tracking policies, as well as data collection for the diffusion training. 
 
-**Key Features:**
-
-- `Motion Registry` In order to manage the large set of motions we used in this work, we leverage WandB registry feature to store and load reference motions automatically.  
-
 
 ## Installation
 
 - Install Isaac Lab by following the [installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html). We recommend using the conda installation as it simplifies calling Python scripts from the terminal.
-
-- **This repo uses git-lfs to store usd. You need to install [git-lfs](https://git-lfs.com/)**. 
+<!-- 
+- **This repo uses git-lfs to store usd. You need to install [git-lfs](https://git-lfs.com/)**.  -->
 
 - Clone this repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
 
@@ -46,6 +42,32 @@ rm unitree_description.tar.gz
 ```bash
 python -m pip install -e source/whole_body_tracking
 ```
+
+### Set up IDE (Optional)
+
+To setup the IDE, please follow these instructions:
+
+- Run VSCode Tasks, by pressing `Ctrl+Shift+P`, selecting `Tasks: Run Task` and running the `setup_python_env` in the drop down menu. When running this task, you will be prompted to add the absolute path to your Isaac Sim installation.
+
+If everything executes correctly, it should create a file .python.env in the `.vscode` directory. The file contains the python paths to all the extensions provided by Isaac Sim and Omniverse. This helps in indexing all the python modules for intelligent suggestions while writing code.
+
+### Setup as Omniverse Extension (Optional)
+
+We provide an example UI extension that will load upon enabling your extension defined in `source/whole_body_tracking/whole_body_tracking/ui_extension_example.py`.
+
+To enable your extension, follow these steps:
+
+1. **Add the search path of your repository** to the extension manager:
+    - Navigate to the extension manager using `Window` -> `Extensions`.
+    - Click on the **Hamburger Icon** (☰), then go to `Settings`.
+    - In the `Extension Search Paths`, enter the absolute path to `IsaacLabExtensionTemplate/source`
+    - If not already present, in the `Extension Search Paths`, enter the path that leads to Isaac Lab's extension directory directory (`IsaacLab/source`)
+    - Click on the **Hamburger Icon** (☰), then click `Refresh`.
+
+2. **Search and enable your extension**:
+    - Find your extension under the `Third Party` category.
+    - Toggle it to enable your extension.
+
 
 ## Motion Tracking
 
@@ -104,31 +126,42 @@ python scripts/rsl_rl/play.py --task=Tracking-Flat-G1-v0 --num_envs=2 --wandb_pa
 ```
 
 The WandB run path can be located in the run overview. It follows the format {your_organization}/{project_name}/ along with a unique 8-character identifier. Note that run_name is different from run_path. 
- 
-### Set up IDE (Optional)
 
-To setup the IDE, please follow these instructions:
+## Code Structure
 
-- Run VSCode Tasks, by pressing `Ctrl+Shift+P`, selecting `Tasks: Run Task` and running the `setup_python_env` in the drop down menu. When running this task, you will be prompted to add the absolute path to your Isaac Sim installation.
+Below is an overview of the code structure for this repository:
 
-If everything executes correctly, it should create a file .python.env in the `.vscode` directory. The file contains the python paths to all the extensions provided by Isaac Sim and Omniverse. This helps in indexing all the python modules for intelligent suggestions while writing code.
+- **`source/whole_body_tracking/whole_body_tracking/tasks/tracking/mdp`**  
+    This directory contains the atomic functions to define the MDP for BeyondMimic. Below is a breakdown of the functions:
 
-### Setup as Omniverse Extension (Optional)
+    - **`commands.py`**  
+        Command library to compute relevant variables from the reference motion, current robot state, and error computations. This includes pose and velocity error calculation, initial state randomization, and adaptive sampling. 
 
-We provide an example UI extension that will load upon enabling your extension defined in `source/whole_body_tracking/whole_body_tracking/ui_extension_example.py`.
+    - **`rewards.py`**  
+        Implements the DeepMimic reward functions and smoothing terms.
 
-To enable your extension, follow these steps:
+    - **`events.py`**  
+        Implements domain randomization terms.
 
-1. **Add the search path of your repository** to the extension manager:
-    - Navigate to the extension manager using `Window` -> `Extensions`.
-    - Click on the **Hamburger Icon** (☰), then go to `Settings`.
-    - In the `Extension Search Paths`, enter the absolute path to `IsaacLabExtensionTemplate/source`
-    - If not already present, in the `Extension Search Paths`, enter the path that leads to Isaac Lab's extension directory directory (`IsaacLab/source`)
-    - Click on the **Hamburger Icon** (☰), then click `Refresh`.
+    - **`observations.py`**  
+        Implements observation terms for motion tracking and data collection.
 
-2. **Search and enable your extension**:
-    - Find your extension under the `Third Party` category.
-    - Toggle it to enable your extension.
+    - **`terminations.py`**  
+        Implements early terminations and timeouts. 
+
+- **`source/whole_body_tracking/whole_body_tracking/tasks/tracking/tracking_env_cfg.py`**  
+    Contains the environment (MDP) hyperparameters configuration for the tracking task.
+
+- **`source/whole_body_tracking/whole_body_tracking/tasks/tracking/config/g1/agents/rsl_rl_ppo_cfg.py`**  
+    Contains the PPO hyperparameters for the tracking task.
+
+- **`source/whole_body_tracking/whole_body_tracking/robots`**  
+    Contains robot-specific settings, including armature parameters, joint stiffness/damping (PD gains) calculation, and action scale calculation. 
+
+- **`scripts`**  
+    Includes utility scripts for preprocessing motion data, training policies, and evaluating trained policies.
+
+This structure is designed to ensure modularity and ease of navigation for developers expanding the project.
 
 ## Docker setup
 
