@@ -27,10 +27,6 @@ import whole_body_tracking.tasks.tracking.mdp as mdp
 # Scene definition
 ##
 
-# VELOCITY_RANGE = {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.05, 0.05),
-#                   "roll": (-0.1, 0.1), "pitch": (-0.1, 0.1), "yaw": (-0.1, 0.1)}
-
-
 VELOCITY_RANGE = {
     "x": (-0.5, 0.5),
     "y": (-0.5, 0.5),
@@ -101,12 +97,6 @@ class CommandsCfg:
         velocity_range=VELOCITY_RANGE,
         joint_position_range=(-0.1, 0.1),
     )
-    # motion = mdp.MotionCommandCfg(asset_name="robot",
-    #                               resampling_time_range=(1.0e9, 1.0e9), debug_vis=True,
-    #                               pose_range={"x": (-0.2, 0.2), "y": (-0.2, 0.2), "z": (-0.05, 0.05),
-    #                                           "roll": (-0.2, 0.2), "pitch": (-0.2, 0.2), "yaw": (-0.78, 0.78)},
-    #                               velocity_range=VELOCITY_RANGE,
-    #                               )
 
 
 @configclass
