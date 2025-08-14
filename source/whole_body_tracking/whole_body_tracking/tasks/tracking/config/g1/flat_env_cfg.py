@@ -1,5 +1,6 @@
 from whole_body_tracking.assets import ASSET_DIR
 from whole_body_tracking.robots.g1 import G1_CYLINDER_CFG, G1_ACTION_SCALE
+from whole_body_tracking.tasks.tracking.config.g1.agents.rsl_rl_ppo_cfg import LOW_FREQ_SCALE
 from whole_body_tracking.tasks.tracking.tracking_env_cfg import TrackingEnvCfg
 
 from isaaclab.utils import configclass
@@ -27,9 +28,6 @@ class G1FlatWoStateEstimationEnvCfg(G1FlatEnvCfg):
         super().__post_init__()
         self.observations.policy.motion_ref_pos_b = None
         self.observations.policy.base_lin_vel = None
-
-
-LOW_FREQ_SCALE = 0.5
 
 
 @configclass
