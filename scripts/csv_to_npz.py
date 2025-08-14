@@ -3,7 +3,7 @@
 .. code-block:: bash
 
     # Usage
-    python csv_to_npz.py --input_file LAFAN/dance1_subject2.csv --input_fps 30 --line_range 122 722 \
+    python csv_to_npz.py --input_file LAFAN/dance1_subject2.csv --input_fps 30 --frame_range 122 722 \
     --output_file ./motions/dance1_subject2.npz --output_fps 50
 """
 
@@ -19,12 +19,12 @@ parser = argparse.ArgumentParser(description="Replay motion from csv file and ou
 parser.add_argument("--input_file", type=str, required=True, help="The path to the input motion csv file.")
 parser.add_argument("--input_fps", type=int, default=30, help="The fps of the input motion.")
 parser.add_argument(
-    "--line_range",
+    "--frame_range",
     nargs=2,
     type=int,
     metavar=("START", "END"),
     help=(
-        "Line range: START END (both inclusive). The line index starts from 1. If not provided, all lines will be"
+        "frame range: START END (both inclusive). The frame index starts from 1. If not provided, all frames will be"
         " loaded."
     ),
 )
@@ -85,7 +85,7 @@ class MotionLoader:
         input_fps: int,
         output_fps: int,
         device: torch.device,
-        line_range: tuple[int, int] | None,
+        frame_range: tuple[int, int] | None,
     ):
         self.motion_file = motion_file
         self.input_fps = input_fps
@@ -94,22 +94,22 @@ class MotionLoader:
         self.output_dt = 1.0 / self.output_fps
         self.current_idx = 0
         self.device = device
-        self.line_range = line_range
+        self.frame_range = frame_range
         self._load_motion()
         self._interpolate_motion()
         self._compute_velocities()
 
     def _load_motion(self):
         """Loads the motion from the csv file."""
-        if self.line_range is None:
+        if self.frame_range is None:
             motion = torch.from_numpy(np.loadtxt(self.motion_file, delimiter=","))
         else:
             motion = torch.from_numpy(
                 np.loadtxt(
                     self.motion_file,
                     delimiter=",",
-                    skiprows=self.line_range[0] - 1,
-                    max_rows=self.line_range[1] - self.line_range[0] + 1,
+                    skiprows=self.frame_range[0] - 1,
+                    max_rows=self.frame_range[1] - self.frame_range[0] + 1,
                 )
             )
         motion = motion.to(torch.float32).to(self.device)
@@ -223,7 +223,7 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene, joi
         input_fps=args_cli.input_fps,
         output_fps=args_cli.output_fps,
         device=sim.device,
-        line_range=args_cli.line_range,
+        frame_range=args_cli.frame_range,
     )
 
     # Extract scene entities
