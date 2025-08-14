@@ -22,7 +22,7 @@ class HumanoidFlatEnvCfg(TrackingEnvCfg):
             },
         )
 
-        self.commands.motion.reference_body = "Torso"
+        self.commands.motion.anchor_body = "Torso"
         self.commands.motion.joint_names = [
             "L_Hip_x",
             "L_Hip_y",

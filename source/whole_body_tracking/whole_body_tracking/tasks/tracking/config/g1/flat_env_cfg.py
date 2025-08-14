@@ -12,7 +12,7 @@ class G1FlatEnvCfg(TrackingEnvCfg):
 
         self.scene.robot = G1_CYLINDER_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.actions.joint_pos.scale = G1_ACTION_SCALE
-        self.commands.motion.reference_body = "torso_link"
+        self.commands.motion.anchor_body = "torso_link"
         self.commands.motion.body_names = [
             "pelvis",
             "left_hip_roll_link",
@@ -35,7 +35,7 @@ class G1FlatEnvCfg(TrackingEnvCfg):
 class G1FlatWoStateEstimationEnvCfg(G1FlatEnvCfg):
     def __post_init__(self):
         super().__post_init__()
-        self.observations.policy.motion_ref_pos_b = None
+        self.observations.policy.motion_anchor_pos_b = None
         self.observations.policy.base_lin_vel = None
 
 

@@ -64,8 +64,8 @@ class MotionCommand(CommandTerm):
         super().__init__(cfg, env)
 
         self.robot: Articulation = env.scene[cfg.asset_name]
-        self.robot_ref_body_index = self.robot.body_names.index(self.cfg.reference_body)
-        self.motion_ref_body_index = self.cfg.body_names.index(self.cfg.reference_body)
+        self.robot_anchor_body_index = self.robot.body_names.index(self.cfg.anchor_body)
+        self.motion_anchor_body_index = self.cfg.body_names.index(self.cfg.anchor_body)
         self.body_indexes = torch.tensor(
             self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0], dtype=torch.long, device=self.device
         )
@@ -76,10 +76,10 @@ class MotionCommand(CommandTerm):
         self.body_quat_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 4, device=self.device)
         self.body_quat_relative_w[:, :, 0] = 1.0
 
-        self.metrics["error_ref_pos"] = torch.zeros(self.num_envs, device=self.device)
-        self.metrics["error_ref_rot"] = torch.zeros(self.num_envs, device=self.device)
-        self.metrics["error_ref_lin_vel"] = torch.zeros(self.num_envs, device=self.device)
-        self.metrics["error_ref_ang_vel"] = torch.zeros(self.num_envs, device=self.device)
+        self.metrics["error_anchor_pos"] = torch.zeros(self.num_envs, device=self.device)
+        self.metrics["error_anchor_rot"] = torch.zeros(self.num_envs, device=self.device)
+        self.metrics["error_anchor_lin_vel"] = torch.zeros(self.num_envs, device=self.device)
+        self.metrics["error_anchor_ang_vel"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["error_body_pos"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["error_body_rot"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["error_joint_pos"] = torch.zeros(self.num_envs, device=self.device)
@@ -114,20 +114,20 @@ class MotionCommand(CommandTerm):
         return self.motion.body_ang_vel_w[self.time_steps]
 
     @property
-    def ref_pos_w(self) -> torch.Tensor:
-        return self.motion.body_pos_w[self.time_steps, self.motion_ref_body_index] + self._env.scene.env_origins
+    def anchor_pos_w(self) -> torch.Tensor:
+        return self.motion.body_pos_w[self.time_steps, self.motion_anchor_body_index] + self._env.scene.env_origins
 
     @property
-    def ref_quat_w(self) -> torch.Tensor:
-        return self.motion.body_quat_w[self.time_steps, self.motion_ref_body_index]
+    def anchor_quat_w(self) -> torch.Tensor:
+        return self.motion.body_quat_w[self.time_steps, self.motion_anchor_body_index]
 
     @property
-    def ref_lin_vel_w(self) -> torch.Tensor:
-        return self.motion.body_lin_vel_w[self.time_steps, self.motion_ref_body_index]
+    def anchor_lin_vel_w(self) -> torch.Tensor:
+        return self.motion.body_lin_vel_w[self.time_steps, self.motion_anchor_body_index]
 
     @property
-    def ref_ang_vel_w(self) -> torch.Tensor:
-        return self.motion.body_ang_vel_w[self.time_steps, self.motion_ref_body_index]
+    def anchor_ang_vel_w(self) -> torch.Tensor:
+        return self.motion.body_ang_vel_w[self.time_steps, self.motion_anchor_body_index]
 
     @property
     def robot_joint_pos(self) -> torch.Tensor:
@@ -154,26 +154,26 @@ class MotionCommand(CommandTerm):
         return self.robot.data.body_ang_vel_w[:, self.body_indexes]
 
     @property
-    def robot_ref_pos_w(self) -> torch.Tensor:
-        return self.robot.data.body_pos_w[:, self.robot_ref_body_index]
+    def robot_anchor_pos_w(self) -> torch.Tensor:
+        return self.robot.data.body_pos_w[:, self.robot_anchor_body_index]
 
     @property
-    def robot_ref_quat_w(self) -> torch.Tensor:
-        return self.robot.data.body_quat_w[:, self.robot_ref_body_index]
+    def robot_anchor_quat_w(self) -> torch.Tensor:
+        return self.robot.data.body_quat_w[:, self.robot_anchor_body_index]
 
     @property
-    def robot_ref_lin_vel_w(self) -> torch.Tensor:
-        return self.robot.data.body_lin_vel_w[:, self.robot_ref_body_index]
+    def robot_anchor_lin_vel_w(self) -> torch.Tensor:
+        return self.robot.data.body_lin_vel_w[:, self.robot_anchor_body_index]
 
     @property
-    def robot_ref_ang_vel_w(self) -> torch.Tensor:
-        return self.robot.data.body_ang_vel_w[:, self.robot_ref_body_index]
+    def robot_anchor_ang_vel_w(self) -> torch.Tensor:
+        return self.robot.data.body_ang_vel_w[:, self.robot_anchor_body_index]
 
     def _update_metrics(self):
-        self.metrics["error_ref_pos"] = torch.norm(self.ref_pos_w - self.robot_ref_pos_w, dim=-1)
-        self.metrics["error_ref_rot"] = quat_error_magnitude(self.ref_quat_w, self.robot_ref_quat_w)
-        self.metrics["error_ref_lin_vel"] = torch.norm(self.ref_lin_vel_w - self.robot_ref_lin_vel_w, dim=-1)
-        self.metrics["error_ref_ang_vel"] = torch.norm(self.ref_ang_vel_w - self.robot_ref_ang_vel_w, dim=-1)
+        self.metrics["error_anchor_pos"] = torch.norm(self.anchor_pos_w - self.robot_anchor_pos_w, dim=-1)
+        self.metrics["error_anchor_rot"] = quat_error_magnitude(self.anchor_quat_w, self.robot_anchor_quat_w)
+        self.metrics["error_anchor_lin_vel"] = torch.norm(self.anchor_lin_vel_w - self.robot_anchor_lin_vel_w, dim=-1)
+        self.metrics["error_anchor_ang_vel"] = torch.norm(self.anchor_ang_vel_w - self.robot_anchor_ang_vel_w, dim=-1)
 
         self.metrics["error_body_pos"] = torch.norm(self.body_pos_relative_w - self.robot_body_pos_w, dim=-1).mean(
             dim=-1
@@ -232,28 +232,28 @@ class MotionCommand(CommandTerm):
         env_ids = torch.where(self.time_steps >= self.motion.time_step_total)[0]
         self._resample_command(env_ids)
 
-        ref_pos_w_repeat = self.ref_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
-        ref_quat_w_repeat = self.ref_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
-        robot_ref_pos_w_repeat = self.robot_ref_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
-        robot_ref_quat_w_repeat = self.robot_ref_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
+        anchor_pos_w_repeat = self.anchor_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
+        anchor_quat_w_repeat = self.anchor_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
+        robot_anchor_pos_w_repeat = self.robot_anchor_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
+        robot_anchor_quat_w_repeat = self.robot_anchor_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
 
-        delta_pos_w = ref_pos_w_repeat - robot_ref_pos_w_repeat
+        delta_pos_w = anchor_pos_w_repeat - robot_anchor_pos_w_repeat
         delta_pos_w[..., :2] = 0.0
-        delta_ori_w = yaw_quat(quat_mul(robot_ref_quat_w_repeat, quat_inv(ref_quat_w_repeat)))
+        delta_ori_w = yaw_quat(quat_mul(robot_anchor_quat_w_repeat, quat_inv(anchor_quat_w_repeat)))
 
         self.body_quat_relative_w = quat_mul(delta_ori_w, self.body_quat_w)
         self.body_pos_relative_w = (
-            robot_ref_pos_w_repeat + delta_pos_w + quat_apply(delta_ori_w, self.body_pos_w - ref_pos_w_repeat)
+            robot_anchor_pos_w_repeat + delta_pos_w + quat_apply(delta_ori_w, self.body_pos_w - anchor_pos_w_repeat)
         )
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
-            if not hasattr(self, "current_ref_visualizer"):
-                self.current_ref_visualizer = VisualizationMarkers(
-                    self.cfg.ref_visualizer_cfg.replace(prim_path="/Visuals/Command/current/ref")
+            if not hasattr(self, "current_anchor_visualizer"):
+                self.current_anchor_visualizer = VisualizationMarkers(
+                    self.cfg.anchor_visualizer_cfg.replace(prim_path="/Visuals/Command/current/anchor")
                 )
-                self.goal_ref_visualizer = VisualizationMarkers(
-                    self.cfg.ref_visualizer_cfg.replace(prim_path="/Visuals/Command/goal/ref")
+                self.goal_anchor_visualizer = VisualizationMarkers(
+                    self.cfg.anchor_visualizer_cfg.replace(prim_path="/Visuals/Command/goal/anchor")
                 )
 
                 self.current_body_visualizers = []
@@ -270,16 +270,16 @@ class MotionCommand(CommandTerm):
                         )
                     )
 
-            self.current_ref_visualizer.set_visibility(True)
-            self.goal_ref_visualizer.set_visibility(True)
+            self.current_anchor_visualizer.set_visibility(True)
+            self.goal_anchor_visualizer.set_visibility(True)
             for i in range(len(self.cfg.body_names)):
                 self.current_body_visualizers[i].set_visibility(True)
                 self.goal_body_visualizers[i].set_visibility(True)
 
         else:
-            if hasattr(self, "current_ref_visualizer"):
-                self.current_ref_visualizer.set_visibility(False)
-                self.goal_ref_visualizer.set_visibility(False)
+            if hasattr(self, "current_anchor_visualizer"):
+                self.current_anchor_visualizer.set_visibility(False)
+                self.goal_anchor_visualizer.set_visibility(False)
                 for i in range(len(self.cfg.body_names)):
                     self.current_body_visualizers[i].set_visibility(False)
                     self.goal_body_visualizers[i].set_visibility(False)
@@ -288,8 +288,8 @@ class MotionCommand(CommandTerm):
         if not self.robot.is_initialized:
             return
 
-        self.current_ref_visualizer.visualize(self.robot_ref_pos_w, self.robot_ref_quat_w)
-        self.goal_ref_visualizer.visualize(self.ref_pos_w, self.ref_quat_w)
+        self.current_anchor_visualizer.visualize(self.robot_anchor_pos_w, self.robot_anchor_quat_w)
+        self.goal_anchor_visualizer.visualize(self.anchor_pos_w, self.anchor_quat_w)
 
         for i in range(len(self.cfg.body_names)):
             self.current_body_visualizers[i].visualize(self.robot_body_pos_w[:, i], self.robot_body_quat_w[:, i])
@@ -305,7 +305,7 @@ class MotionCommandCfg(CommandTermCfg):
     asset_name: str = MISSING
 
     motion_file: str = MISSING
-    reference_body: str = MISSING
+    anchor_body: str = MISSING
     body_names: list[str] = MISSING
 
     pose_range: dict[str, tuple[float, float]] = {}
@@ -313,8 +313,8 @@ class MotionCommandCfg(CommandTermCfg):
 
     joint_position_range: tuple[float, float] = (-0.52, 0.52)
 
-    ref_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
-    ref_visualizer_cfg.markers["frame"].scale = (0.2, 0.2, 0.2)
+    anchor_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
+    anchor_visualizer_cfg.markers["frame"].scale = (0.2, 0.2, 0.2)
 
     body_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
     body_visualizer_cfg.markers["frame"].scale = (0.1, 0.1, 0.1)
