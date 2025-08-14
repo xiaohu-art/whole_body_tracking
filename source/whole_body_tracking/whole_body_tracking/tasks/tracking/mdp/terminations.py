@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
-
 import torch
+from typing import TYPE_CHECKING
 
 import isaaclab.utils.math as math_utils
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
-from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
-from whole_body_tracking.tasks.tracking.mdp.rewards import _get_body_indexes
-
 from isaaclab.assets import Articulation, RigidObject
 from isaaclab.managers import SceneEntityCfg
+
+from whole_body_tracking.tasks.tracking.mdp.commands import MotionCommand
+from whole_body_tracking.tasks.tracking.mdp.rewards import _get_body_indexes
 
 
 def bad_ref_pos(env: ManagerBasedRLEnv, command_name: str, threshold: float) -> torch.Tensor:
@@ -37,9 +36,9 @@ def bad_ref_ori(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg, command_name:
     return (motion_projected_gravity_b[:, 2] - robot_projected_gravity_b[:, 2]).abs() > threshold
 
 
-def bad_motion_body_pos(env: ManagerBasedRLEnv, command_name: str, threshold: float,
-                        body_names: Optional[list[str]] = None
-                        ) -> torch.Tensor:
+def bad_motion_body_pos(
+    env: ManagerBasedRLEnv, command_name: str, threshold: float, body_names: list[str] | None = None
+) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     body_indexes = _get_body_indexes(command, body_names)
@@ -47,9 +46,9 @@ def bad_motion_body_pos(env: ManagerBasedRLEnv, command_name: str, threshold: fl
     return torch.any(error > threshold, dim=-1)
 
 
-def bad_motion_body_pos_z_only(env: ManagerBasedRLEnv, command_name: str, threshold: float,
-                               body_names: Optional[list[str]] = None
-                               ) -> torch.Tensor:
+def bad_motion_body_pos_z_only(
+    env: ManagerBasedRLEnv, command_name: str, threshold: float, body_names: list[str] | None = None
+) -> torch.Tensor:
     command: MotionCommand = env.command_manager.get_term(command_name)
 
     body_indexes = _get_body_indexes(command, body_names)

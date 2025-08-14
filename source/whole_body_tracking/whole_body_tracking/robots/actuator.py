@@ -4,8 +4,7 @@ import torch
 from collections.abc import Sequence
 
 from isaaclab.actuators import ImplicitActuator, ImplicitActuatorCfg
-from isaaclab.utils import DelayBuffer
-from isaaclab.utils import configclass
+from isaaclab.utils import DelayBuffer, configclass
 from isaaclab.utils.types import ArticulationActions
 
 
@@ -59,7 +58,7 @@ class DelayedImplicitActuator(ImplicitActuator):
         self.efforts_delay_buffer.reset(env_ids)
 
     def compute(
-            self, control_action: ArticulationActions, joint_pos: torch.Tensor, joint_vel: torch.Tensor
+        self, control_action: ArticulationActions, joint_pos: torch.Tensor, joint_vel: torch.Tensor
     ) -> ArticulationActions:
         # apply delay based on the delay the model for all the setpoints
         control_action.joint_positions = self.positions_delay_buffer.compute(control_action.joint_positions)

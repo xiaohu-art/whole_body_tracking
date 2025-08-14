@@ -1,25 +1,24 @@
 from __future__ import annotations
 
-from typing import Literal, TYPE_CHECKING
-
 import torch
+from typing import TYPE_CHECKING, Literal
 
+import isaaclab.utils.math as math_utils
 from isaaclab.assets import Articulation
 from isaaclab.envs.mdp.events import _randomize_prop_by_op
 from isaaclab.managers import SceneEntityCfg
-import isaaclab.utils.math as math_utils
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv
 
 
 def randomize_joint_default_pos(
-        env: ManagerBasedEnv,
-        env_ids: torch.Tensor | None,
-        asset_cfg: SceneEntityCfg,
-        pos_distribution_params: tuple[float, float] | None = None,
-        operation: Literal["add", "scale", "abs"] = "abs",
-        distribution: Literal["uniform", "log_uniform", "gaussian"] = "uniform",
+    env: ManagerBasedEnv,
+    env_ids: torch.Tensor | None,
+    asset_cfg: SceneEntityCfg,
+    pos_distribution_params: tuple[float, float] | None = None,
+    operation: Literal["add", "scale", "abs"] = "abs",
+    distribution: Literal["uniform", "log_uniform", "gaussian"] = "uniform",
 ):
     """
     Randomize the joint default positions which may be different from URDF due to calibration errors.
@@ -50,15 +49,14 @@ def randomize_joint_default_pos(
             env_ids = env_ids[:, None]
         asset.data.default_joint_pos[env_ids, joint_ids] = pos
         # update the offset in action since it is not updated automatically
-        env.action_manager.get_term('joint_pos')._offset[env_ids, joint_ids] = pos
-
+        env.action_manager.get_term("joint_pos")._offset[env_ids, joint_ids] = pos
 
 
 def randomize_rigid_body_com(
-        env: ManagerBasedEnv,
-        env_ids: torch.Tensor | None,
-        com_range: dict[str, tuple[float, float]],
-        asset_cfg: SceneEntityCfg,
+    env: ManagerBasedEnv,
+    env_ids: torch.Tensor | None,
+    com_range: dict[str, tuple[float, float]],
+    asset_cfg: SceneEntityCfg,
 ):
     """Randomize the center of mass (CoM) of rigid bodies by adding a random value sampled from the given ranges.
 

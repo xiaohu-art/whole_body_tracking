@@ -5,9 +5,10 @@
 import argparse
 import sys
 
+from isaaclab.app import AppLauncher
+
 # local imports
 import cli_args  # isort: skip
-from isaaclab.app import AppLauncher
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
@@ -39,25 +40,26 @@ simulation_app = app_launcher.app
 
 import gymnasium as gym
 import os
-import torch
 import pathlib
+import torch
 
 from rsl_rl.runners import OnPolicyRunner
 
 from isaaclab.envs import (
+    DirectMARLEnv,
     DirectMARLEnvCfg,
     DirectRLEnvCfg,
     ManagerBasedRLEnvCfg,
+    multi_agent_to_single_agent,
 )
-from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent
 from isaaclab.utils.dict import print_dict
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
-from isaaclab_tasks.utils import get_checkpoint_path, parse_env_cfg
+from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
 # Import extensions to set up environment tasks
 import whole_body_tracking.tasks  # noqa: F401
-from whole_body_tracking.utils.exporter import export_motion_policy_as_onnx, attach_onnx_metadata
+from whole_body_tracking.utils.exporter import attach_onnx_metadata, export_motion_policy_as_onnx
 
 
 @hydra_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
@@ -72,22 +74,23 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     if args_cli.wandb_path:
         import wandb
+
         run_path = args_cli.wandb_path
 
         api = wandb.Api()
-        if 'model' in args_cli.wandb_path:
-            run_path = '/'.join(args_cli.wandb_path.split('/')[:-1])
+        if "model" in args_cli.wandb_path:
+            run_path = "/".join(args_cli.wandb_path.split("/")[:-1])
         wandb_run = api.run(run_path)
         # loop over files in the run
-        files = [file.name for file in wandb_run.files() if 'model' in file.name]
+        files = [file.name for file in wandb_run.files() if "model" in file.name]
         # files are all model_xxx.pt find the largest filename
-        if 'model' in args_cli.wandb_path:
-            file = args_cli.wandb_path.split('/')[-1]
+        if "model" in args_cli.wandb_path:
+            file = args_cli.wandb_path.split("/")[-1]
         else:
-            file = max(files, key=lambda x: int(x.split('_')[1].split('.')[0]))
+            file = max(files, key=lambda x: int(x.split("_")[1].split(".")[0]))
 
         wandb_file = wandb_run.file(str(file))
-        wandb_file.download(f"./logs/rsl_rl/temp", replace=True)
+        wandb_file.download("./logs/rsl_rl/temp", replace=True)
 
         print(f"[INFO]: Loading model checkpoint from: {run_path}/{file}")
         resume_path = f"./logs/rsl_rl/temp/{file}"
@@ -141,8 +144,13 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     # export policy to onnx/jit
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
 
-    export_motion_policy_as_onnx(env.unwrapped, ppo_runner.alg.policy, normalizer=ppo_runner.obs_normalizer,
-                                 path=export_model_dir, filename="policy.onnx")
+    export_motion_policy_as_onnx(
+        env.unwrapped,
+        ppo_runner.alg.policy,
+        normalizer=ppo_runner.obs_normalizer,
+        path=export_model_dir,
+        filename="policy.onnx",
+    )
     attach_onnx_metadata(env.unwrapped, args_cli.wandb_path if args_cli.wandb_path else "none", export_model_dir)
     # reset environment
     obs, _ = env.get_observations()

@@ -35,6 +35,7 @@ def add_rsl_rl_args(parser: argparse.ArgumentParser):
         "--wandb_path", type=str, default=None, help="Name of the logging project when using wandb or neptune."
     )
 
+
 def parse_rsl_rl_cfg(task_name: str, args_cli: argparse.Namespace) -> RslRlOnPolicyRunnerCfg:
     """Parse configuration for RSL-RL agent based on inputs.
 

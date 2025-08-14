@@ -10,7 +10,6 @@
 """Launch Isaac Sim Simulator first."""
 
 import argparse
-
 import numpy as np
 
 from isaaclab.app import AppLauncher
@@ -19,9 +18,16 @@ from isaaclab.app import AppLauncher
 parser = argparse.ArgumentParser(description="Replay motion from csv file and output to npz file.")
 parser.add_argument("--input_file", type=str, required=True, help="The path to the input motion csv file.")
 parser.add_argument("--input_fps", type=int, default=30, help="The fps of the input motion.")
-parser.add_argument("--line_range", nargs=2, type=int, metavar=("START", "END"),
-                    help="Line range: START END (both inclusive). The line index starts from 1. If not provided, all lines will be loaded.",
-                    )
+parser.add_argument(
+    "--line_range",
+    nargs=2,
+    type=int,
+    metavar=("START", "END"),
+    help=(
+        "Line range: START END (both inclusive). The line index starts from 1. If not provided, all lines will be"
+        " loaded."
+    ),
+)
 parser.add_argument("--output_name", type=str, required=True, help="The name of the motion npz file.")
 parser.add_argument("--output_fps", type=int, default=50, help="The fps of the output motion.")
 
@@ -44,12 +50,7 @@ from isaaclab.scene import InteractiveScene, InteractiveSceneCfg
 from isaaclab.sim import SimulationContext
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
-from isaaclab.utils.math import (
-    quat_mul,
-    quat_conjugate,
-    axis_angle_from_quat,
-    quat_slerp,
-)
+from isaaclab.utils.math import axis_angle_from_quat, quat_conjugate, quat_mul, quat_slerp
 
 ##
 # Pre-defined configs
@@ -62,9 +63,7 @@ class ReplayMotionsSceneCfg(InteractiveSceneCfg):
     """Configuration for a replay motions scene."""
 
     # ground plane
-    ground = AssetBaseCfg(
-        prim_path="/World/defaultGroundPlane", spawn=sim_utils.GroundPlaneCfg()
-    )
+    ground = AssetBaseCfg(prim_path="/World/defaultGroundPlane", spawn=sim_utils.GroundPlaneCfg())
 
     # lights
     sky_light = AssetBaseCfg(
@@ -81,12 +80,12 @@ class ReplayMotionsSceneCfg(InteractiveSceneCfg):
 
 class MotionLoader:
     def __init__(
-            self,
-            motion_file: str,
-            input_fps: int,
-            output_fps: int,
-            device: torch.device,
-            line_range: tuple[int, int] | None,
+        self,
+        motion_file: str,
+        input_fps: int,
+        output_fps: int,
+        device: torch.device,
+        line_range: tuple[int, int] | None,
     ):
         self.motion_file = motion_file
         self.input_fps = input_fps
@@ -121,15 +120,11 @@ class MotionLoader:
 
         self.input_frames = motion.shape[0]
         self.duration = (self.input_frames - 1) * self.input_dt
-        print(
-            f"Motion loaded ({self.motion_file}), duration: {self.duration} sec, frames: {self.input_frames}"
-        )
+        print(f"Motion loaded ({self.motion_file}), duration: {self.duration} sec, frames: {self.input_frames}")
 
     def _interpolate_motion(self):
         """Interpolates the motion to the output fps."""
-        times = torch.arange(
-            0, self.duration, self.output_dt, device=self.device, dtype=torch.float32
-        )
+        times = torch.arange(0, self.duration, self.output_dt, device=self.device, dtype=torch.float32)
         self.output_frames = times.shape[0]
         index_0, index_1, blend = self._compute_frame_blend(times)
         self.motion_base_poss = self._lerp(
@@ -148,7 +143,8 @@ class MotionLoader:
             blend.unsqueeze(1),
         )
         print(
-            f"Motion interpolated, input frames: {self.input_frames}, input fps: {self.input_fps}, output frames: {self.output_frames}, output fps: {self.output_fps}"
+            f"Motion interpolated, input frames: {self.input_frames}, input fps: {self.input_fps}, output frames:"
+            f" {self.output_frames}, output fps: {self.output_fps}"
         )
 
     def _lerp(self, a: torch.Tensor, b: torch.Tensor, blend: torch.Tensor) -> torch.Tensor:
@@ -172,15 +168,9 @@ class MotionLoader:
 
     def _compute_velocities(self):
         """Computes the velocities of the motion."""
-        self.motion_base_lin_vels = torch.gradient(
-            self.motion_base_poss, spacing=self.output_dt, dim=0
-        )[0]
-        self.motion_dof_vels = torch.gradient(
-            self.motion_dof_poss, spacing=self.output_dt, dim=0
-        )[0]
-        self.motion_base_ang_vels = self._so3_derivative(
-            self.motion_base_rots, self.output_dt
-        )
+        self.motion_base_lin_vels = torch.gradient(self.motion_base_poss, spacing=self.output_dt, dim=0)[0]
+        self.motion_dof_vels = torch.gradient(self.motion_dof_poss, spacing=self.output_dt, dim=0)[0]
+        self.motion_base_ang_vels = self._so3_derivative(self.motion_base_rots, self.output_dt)
 
     def _so3_derivative(self, rotations: torch.Tensor, dt: float) -> torch.Tensor:
         """Computes the derivative of a sequence of SO3 rotations.
@@ -195,13 +185,11 @@ class MotionLoader:
         q_rel = quat_mul(q_next, quat_conjugate(q_prev))  # shape (B−2, 4)
 
         omega = axis_angle_from_quat(q_rel) / (2.0 * dt)  # shape (B−2, 3)
-        omega = torch.cat(
-            [omega[:1], omega, omega[-1:]], dim=0
-        )  # repeat first and last sample
+        omega = torch.cat([omega[:1], omega, omega[-1:]], dim=0)  # repeat first and last sample
         return omega
 
     def get_next_state(
-            self,
+        self,
     ) -> tuple[
         torch.Tensor,
         torch.Tensor,
@@ -212,12 +200,12 @@ class MotionLoader:
     ]:
         """Gets the next state of the motion."""
         state = (
-            self.motion_base_poss[self.current_idx: self.current_idx + 1],
-            self.motion_base_rots[self.current_idx: self.current_idx + 1],
-            self.motion_base_lin_vels[self.current_idx: self.current_idx + 1],
-            self.motion_base_ang_vels[self.current_idx: self.current_idx + 1],
-            self.motion_dof_poss[self.current_idx: self.current_idx + 1],
-            self.motion_dof_vels[self.current_idx: self.current_idx + 1],
+            self.motion_base_poss[self.current_idx : self.current_idx + 1],
+            self.motion_base_rots[self.current_idx : self.current_idx + 1],
+            self.motion_base_lin_vels[self.current_idx : self.current_idx + 1],
+            self.motion_base_ang_vels[self.current_idx : self.current_idx + 1],
+            self.motion_dof_poss[self.current_idx : self.current_idx + 1],
+            self.motion_dof_vels[self.current_idx : self.current_idx + 1],
         )
         self.current_idx += 1
         reset_flag = False
@@ -227,9 +215,7 @@ class MotionLoader:
         return state, reset_flag
 
 
-def run_simulator(
-        sim: sim_utils.SimulationContext, scene: InteractiveScene, joint_names: list[str]
-):
+def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene, joint_names: list[str]):
     """Runs the simulation loop."""
     # Load motion
     motion = MotionLoader(
@@ -297,28 +283,25 @@ def run_simulator(
             log["joint_vel"].append(robot.data.joint_vel[0, :].cpu().numpy().copy())
             log["body_pos_w"].append(robot.data.body_pos_w[0, :].cpu().numpy().copy())
             log["body_quat_w"].append(robot.data.body_quat_w[0, :].cpu().numpy().copy())
-            log["body_lin_vel_w"].append(
-                robot.data.body_lin_vel_w[0, :].cpu().numpy().copy()
-            )
-            log["body_ang_vel_w"].append(
-                robot.data.body_ang_vel_w[0, :].cpu().numpy().copy()
-            )
+            log["body_lin_vel_w"].append(robot.data.body_lin_vel_w[0, :].cpu().numpy().copy())
+            log["body_ang_vel_w"].append(robot.data.body_ang_vel_w[0, :].cpu().numpy().copy())
 
         if reset_flag and not file_saved:
             file_saved = True
             for k in (
-                    "joint_pos",
-                    "joint_vel",
-                    "body_pos_w",
-                    "body_quat_w",
-                    "body_lin_vel_w",
-                    "body_ang_vel_w",
+                "joint_pos",
+                "joint_vel",
+                "body_pos_w",
+                "body_quat_w",
+                "body_lin_vel_w",
+                "body_ang_vel_w",
             ):
                 log[k] = np.stack(log[k], axis=0)
 
             np.savez("/tmp/motion.npz", **log)
 
             import wandb
+
             COLLECTION = args_cli.output_name
             run = wandb.init(project="csv_to_npz", name=COLLECTION)
             print(f"[INFO]: Logging motion to wandb: {COLLECTION}")
@@ -326,6 +309,7 @@ def run_simulator(
             logged_artifact = run.log_artifact(artifact_or_path="/tmp/motion.npz", name=COLLECTION, type=REGISTRY)
             run.link_artifact(artifact=logged_artifact, target_path=f"wandb-registry-{REGISTRY}/{COLLECTION}")
             print(f"[INFO]: Motion saved to wandb registry: {REGISTRY}/{COLLECTION}")
+
 
 def main():
     """Main function."""

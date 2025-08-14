@@ -1,20 +1,26 @@
 from __future__ import annotations
 
+import numpy as np
 import os
+import torch
 from collections.abc import Sequence
 from dataclasses import MISSING
 from typing import TYPE_CHECKING
-
-import numpy as np
-import torch
 
 from isaaclab.assets import Articulation
 from isaaclab.managers import CommandTerm, CommandTermCfg
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
 from isaaclab.markers.config import FRAME_MARKER_CFG
 from isaaclab.utils import configclass
-from isaaclab.utils.math import quat_mul, quat_apply, quat_inv, quat_error_magnitude, yaw_quat, sample_uniform, \
-    quat_from_euler_xyz
+from isaaclab.utils.math import (
+    quat_apply,
+    quat_error_magnitude,
+    quat_from_euler_xyz,
+    quat_inv,
+    quat_mul,
+    sample_uniform,
+    yaw_quat,
+)
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -60,8 +66,9 @@ class MotionCommand(CommandTerm):
         self.robot: Articulation = env.scene[cfg.asset_name]
         self.robot_ref_body_index = self.robot.body_names.index(self.cfg.reference_body)
         self.motion_ref_body_index = self.cfg.body_names.index(self.cfg.reference_body)
-        self.body_indexes = torch.tensor(self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0],
-                                         dtype=torch.long, device=self.device)
+        self.body_indexes = torch.tensor(
+            self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0], dtype=torch.long, device=self.device
+        )
 
         self.motion = MotionLoader(self.cfg.motion_file, self.body_indexes, device=self.device)
         self.time_steps = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
@@ -168,15 +175,19 @@ class MotionCommand(CommandTerm):
         self.metrics["error_ref_lin_vel"] = torch.norm(self.ref_lin_vel_w - self.robot_ref_lin_vel_w, dim=-1)
         self.metrics["error_ref_ang_vel"] = torch.norm(self.ref_ang_vel_w - self.robot_ref_ang_vel_w, dim=-1)
 
-        self.metrics["error_body_pos"] = torch.norm(
-            self.body_pos_relative_w - self.robot_body_pos_w, dim=-1).mean(dim=-1)
-        self.metrics["error_body_rot"] = quat_error_magnitude(
-            self.body_quat_relative_w, self.robot_body_quat_w).mean(dim=-1)
+        self.metrics["error_body_pos"] = torch.norm(self.body_pos_relative_w - self.robot_body_pos_w, dim=-1).mean(
+            dim=-1
+        )
+        self.metrics["error_body_rot"] = quat_error_magnitude(self.body_quat_relative_w, self.robot_body_quat_w).mean(
+            dim=-1
+        )
 
-        self.metrics["error_body_lin_vel"] = torch.norm(
-            self.body_lin_vel_w - self.robot_body_lin_vel_w, dim=-1).mean(dim=-1)
-        self.metrics["error_body_ang_vel"] = torch.norm(
-            self.body_ang_vel_w - self.robot_body_ang_vel_w, dim=-1).mean(dim=-1)
+        self.metrics["error_body_lin_vel"] = torch.norm(self.body_lin_vel_w - self.robot_body_lin_vel_w, dim=-1).mean(
+            dim=-1
+        )
+        self.metrics["error_body_ang_vel"] = torch.norm(self.body_ang_vel_w - self.robot_body_ang_vel_w, dim=-1).mean(
+            dim=-1
+        )
 
         self.metrics["error_joint_pos"] = torch.norm(self.joint_pos - self.robot_joint_pos, dim=-1)
         self.metrics["error_joint_vel"] = torch.norm(self.joint_vel - self.robot_joint_vel, dim=-1)
@@ -207,13 +218,14 @@ class MotionCommand(CommandTerm):
 
         joint_pos += sample_uniform(*self.cfg.joint_position_range, joint_pos.shape, joint_pos.device)
         soft_joint_pos_limits = self.robot.data.soft_joint_pos_limits[env_ids]
-        joint_pos[env_ids] = torch.clip(joint_pos[env_ids],
-                                        soft_joint_pos_limits[:, :, 0],
-                                        soft_joint_pos_limits[:, :, 1])
+        joint_pos[env_ids] = torch.clip(
+            joint_pos[env_ids], soft_joint_pos_limits[:, :, 0], soft_joint_pos_limits[:, :, 1]
+        )
         self.robot.write_joint_state_to_sim(joint_pos[env_ids], joint_vel[env_ids], env_ids=env_ids)
-        self.robot.write_root_state_to_sim(torch.cat(
-            [root_pos[env_ids], root_ori[env_ids],
-             root_lin_vel[env_ids], root_ang_vel[env_ids]], dim=-1), env_ids=env_ids)
+        self.robot.write_root_state_to_sim(
+            torch.cat([root_pos[env_ids], root_ori[env_ids], root_lin_vel[env_ids], root_ang_vel[env_ids]], dim=-1),
+            env_ids=env_ids,
+        )
 
     def _update_command(self):
         self.time_steps += 1
@@ -230,24 +242,33 @@ class MotionCommand(CommandTerm):
         delta_ori_w = yaw_quat(quat_mul(robot_ref_quat_w_repeat, quat_inv(ref_quat_w_repeat)))
 
         self.body_quat_relative_w = quat_mul(delta_ori_w, self.body_quat_w)
-        self.body_pos_relative_w = (robot_ref_pos_w_repeat + delta_pos_w
-                                    + quat_apply(delta_ori_w, self.body_pos_w - ref_pos_w_repeat))
+        self.body_pos_relative_w = (
+            robot_ref_pos_w_repeat + delta_pos_w + quat_apply(delta_ori_w, self.body_pos_w - ref_pos_w_repeat)
+        )
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
             if not hasattr(self, "current_ref_visualizer"):
                 self.current_ref_visualizer = VisualizationMarkers(
-                    self.cfg.ref_visualizer_cfg.replace(prim_path="/Visuals/Command/current/ref"))
+                    self.cfg.ref_visualizer_cfg.replace(prim_path="/Visuals/Command/current/ref")
+                )
                 self.goal_ref_visualizer = VisualizationMarkers(
-                    self.cfg.ref_visualizer_cfg.replace(prim_path="/Visuals/Command/goal/ref"))
+                    self.cfg.ref_visualizer_cfg.replace(prim_path="/Visuals/Command/goal/ref")
+                )
 
                 self.current_body_visualizers = []
                 self.goal_body_visualizers = []
                 for name in self.cfg.body_names:
-                    self.current_body_visualizers.append(VisualizationMarkers(self.cfg.body_visualizer_cfg.replace(
-                        prim_path="/Visuals/Command/current/" + name)))
-                    self.goal_body_visualizers.append(VisualizationMarkers(self.cfg.body_visualizer_cfg.replace(
-                        prim_path="/Visuals/Command/goal/" + name)))
+                    self.current_body_visualizers.append(
+                        VisualizationMarkers(
+                            self.cfg.body_visualizer_cfg.replace(prim_path="/Visuals/Command/current/" + name)
+                        )
+                    )
+                    self.goal_body_visualizers.append(
+                        VisualizationMarkers(
+                            self.cfg.body_visualizer_cfg.replace(prim_path="/Visuals/Command/goal/" + name)
+                        )
+                    )
 
             self.current_ref_visualizer.set_visibility(True)
             self.goal_ref_visualizer.set_visibility(True)
@@ -278,6 +299,7 @@ class MotionCommand(CommandTerm):
 @configclass
 class MotionCommandCfg(CommandTermCfg):
     """Configuration for the motion command."""
+
     class_type: type = MotionCommand
 
     asset_name: str = MISSING
