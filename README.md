@@ -1,32 +1,43 @@
-# BeyondMimic Simulation Framework
+# BeyondMimic Motion Trakcing Code
 
 [![IsaacSim](https://img.shields.io/badge/IsaacSim-4.5.0-silver.svg)](https://docs.omniverse.nvidia.com/isaacsim/latest/overview.html)
 [![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.1.0-silver)](https://isaac-sim.github.io/IsaacLab)
 [![Python](https://img.shields.io/badge/python-3.10-blue.svg)](https://docs.python.org/3/whatsnew/3.10.html)
 [![Linux platform](https://img.shields.io/badge/platform-linux--64-orange.svg)](https://releases.ubuntu.com/20.04/)
-[![Windows platform](https://img.shields.io/badge/platform-windows--64-orange.svg)](https://www.microsoft.com/en-us/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](https://opensource.org/license/mit)
 
+[[Website]](https://beyondmimic.github.io/)
+[[Arxiv]](https://arxiv.org/abs/2508.08241)
+[[Video]](https://youtu.be/RS_MtKVIAzY)
+
 ## Overview
 
-BeyondMimic is a versatile humanoid control framework that provides highly-dynamic motion tracking with the state-of-the-art motion quality on real-world deployment and steerable test-time control with guided diffusion-based controllers. This repo covers the simulator-related framework in BeyondMimic, which is used to train the motion tracking policies, as well as data collection for the diffusion training. 
+BeyondMimic is a versatile humanoid control framework that provides highly dynamic motion tracking with the state-of-the-art motion quality on real-world deployment and steerable test-time control with guided diffusion-based controllers. 
+
+This repo covers the motion tracking training in BeyondMimic. **After adaptive sampling added, you should be able to train any sim-to-real-ready motion in the LAFAN1 dataset, without tuning any parameters**. 
+
+TODO list:
+
+- [ ] Adaptive Sampling: fixing some bugs from numerical issues.
+- [ ] Deployment: will be on another repo.
 
 
 ## Installation
 
-- Install Isaac Lab by following the [installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html). We recommend using the conda installation as it simplifies calling Python scripts from the terminal.
-<!-- 
-- **This repo uses git-lfs to store usd. You need to install [git-lfs](https://git-lfs.com/)**.  -->
+- Install Isaac Lab v2.1.0 by following the [installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html). We recommend using the conda installation as it simplifies calling Python scripts from the terminal.
 
-- Clone this repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
+- Clone this repository separately from the Isaac Lab installation (i.e., outside the `IsaacLab` directory):
 
 ```bash
-# Option 1: HTTPS
-git clone https://github.com/qiayuanl/whole_body_tracking.git
+# Option 1: SSH
+git clone git@github.com:HybridRobotics/whole_body_tracking.git
+
+# Option 2: HTTPS
+git clone https://github.com/HybridRobotics/whole_body_tracking.git
 ```
 
-- Pull the robot description files
+- Pull the robot description files from GCS
 
 ```bash
 # Enter the repository
@@ -37,44 +48,19 @@ tar -xzf unitree_description.tar.gz -C source/whole_body_tracking/whole_body_tra
 rm unitree_description.tar.gz
 ```
 
-- Using a python interpreter that has Isaac Lab installed, install the library
+- Using a Python interpreter that has Isaac Lab installed, install the library
 
 ```bash
 python -m pip install -e source/whole_body_tracking
 ```
 
-### Set up IDE (Optional)
-
-To setup the IDE, please follow these instructions:
-
-- Run VSCode Tasks, by pressing `Ctrl+Shift+P`, selecting `Tasks: Run Task` and running the `setup_python_env` in the drop down menu. When running this task, you will be prompted to add the absolute path to your Isaac Sim installation.
-
-If everything executes correctly, it should create a file .python.env in the `.vscode` directory. The file contains the python paths to all the extensions provided by Isaac Sim and Omniverse. This helps in indexing all the python modules for intelligent suggestions while writing code.
-
-### Setup as Omniverse Extension (Optional)
-
-We provide an example UI extension that will load upon enabling your extension defined in `source/whole_body_tracking/whole_body_tracking/ui_extension_example.py`.
-
-To enable your extension, follow these steps:
-
-1. **Add the search path of your repository** to the extension manager:
-    - Navigate to the extension manager using `Window` -> `Extensions`.
-    - Click on the **Hamburger Icon** (☰), then go to `Settings`.
-    - In the `Extension Search Paths`, enter the absolute path to `IsaacLabExtensionTemplate/source`
-    - If not already present, in the `Extension Search Paths`, enter the path that leads to Isaac Lab's extension directory directory (`IsaacLab/source`)
-    - Click on the **Hamburger Icon** (☰), then click `Refresh`.
-
-2. **Search and enable your extension**:
-    - Find your extension under the `Third Party` category.
-    - Toggle it to enable your extension.
-
-
 ## Motion Tracking
 
 ### Motion Preprocessing & Registry Setup
+In order to manage the large set of motions we used in this work, we leverage the WandB registry to store and load reference motions automatically.
 Note: The reference motion should be retargeted and use generalized coordinates only. 
 
-- Gather the reference motion datasets (please follow the original licenses)
+- Gather the reference motion datasets (please follow the original licenses), we use the same convention as .csv of Unitree's dataset
     
     - Unitree-retargeted LAFAN1 Dataset is available on [HuggingFace](https://huggingface.co/datasets/lvhaidong/LAFAN1_Retargeting_Dataset)
     - Sidekicks are from [KungfuBot](https://kungfu-bot.github.io/)
@@ -82,7 +68,7 @@ Note: The reference motion should be retargeted and use generalized coordinates 
     - Balance motions are from [HuB](https://hub-robot.github.io/)
 
 
-- Log in to your WandB account; access Registry under Core on the left. Create a new registry with name "Motions" and artifact type "All Types". 
+- Log in to your WandB account; access Registry under Core on the left. Create a new registry with the name "Motions" and artifact type "All Types". 
 
 - Update the WandB api to at least 0.19
 ```bash
@@ -92,13 +78,13 @@ python -m pip install wandb==0.19
 - Convert retargeted motions to include the maximum coordinates information (body pose, body velocity, and body acceleration) via forward kinematics,
 
 ```bash
-python scripts/csv_to_npz.py --input_file {motion_name}.csv --input_fps 30 --output_name {motion_name}
+python scripts/csv_to_npz.py --input_file {motion_name}.csv --input_fps 30 --output_name {motion_name} --headless
 ```
 
-This will automatically upload the processed motion file to WandB registry with output name {motion_name}. 
+This will automatically upload the processed motion file to the WandB registry with output name {motion_name}. 
 
 
-- Test if WandB registry works properly by replaying the motion in Isaac Sim:
+- Test if the WandB registry works properly by replaying the motion in Isaac Sim:
 
 ```bash
 python scripts/replay_npz.py --registry_name={your-organization}-org/wandb-registry-motions/{motion_name}
@@ -156,127 +142,9 @@ Below is an overview of the code structure for this repository:
     Contains the PPO hyperparameters for the tracking task.
 
 - **`source/whole_body_tracking/whole_body_tracking/robots`**  
-    Contains robot-specific settings, including armature parameters, joint stiffness/damping (PD gains) calculation, and action scale calculation. 
+    Contains robot-specific settings, including armature parameters, joint stiffness/damping calculation, and action scale calculation. 
 
 - **`scripts`**  
     Includes utility scripts for preprocessing motion data, training policies, and evaluating trained policies.
 
 This structure is designed to ensure modularity and ease of navigation for developers expanding the project.
-
-## Docker setup
-
-### Building Isaac Lab Base Image
-
-Currently, we don't have the Docker for Isaac Lab publicly available. Hence, you'd need to build the docker image
-for Isaac Lab locally by following the steps [here](https://isaac-sim.github.io/IsaacLab/main/source/deployment/index.html).
-
-Once you have built the base Isaac Lab image, you can check it exists by doing:
-
-```bash
-docker images
-
-# Output should look something like:
-#
-# REPOSITORY                       TAG       IMAGE ID       CREATED          SIZE
-# isaac-lab-base                   latest    28be62af627e   32 minutes ago   18.9GB
-```
-
-### Building Isaac Lab Template Image
-
-Following above, you can build the docker container for this project. It is called `isaac-lab-template`. However,
-you can modify this name inside the [`docker/docker-compose.yaml`](docker/docker-compose.yaml).
-
-```bash
-cd docker
-docker compose --env-file .env.base --file docker-compose.yaml build isaac-lab-template
-```
-
-You can verify the image is built successfully using the same command as earlier:
-
-```bash
-docker images
-
-# Output should look something like:
-#
-# REPOSITORY                       TAG       IMAGE ID       CREATED             SIZE
-# isaac-lab-template               latest    00b00b647e1b   2 minutes ago       18.9GB
-# isaac-lab-base                   latest    892938acb55c   About an hour ago   18.9GB
-```
-
-### Running the container
-
-After building, the usual next step is to start the containers associated with your services. You can do this with:
-
-```bash
-docker compose --env-file .env.base --file docker-compose.yaml up
-```
-
-This will start the services defined in your `docker-compose.yaml` file, including isaac-lab-template.
-
-If you want to run it in detached mode (in the background), use:
-
-```bash
-docker compose --env-file .env.base --file docker-compose.yaml up -d
-```
-
-### Interacting with a running container
-
-If you want to run commands inside the running container, you can use the `exec` command:
-
-```bash
-docker exec --interactive --tty -e DISPLAY=${DISPLAY} isaac-lab-template /bin/bash
-```
-
-### Shutting down the container
-
-When you are done or want to stop the running containers, you can bring down the services:
-
-```bash
-docker compose --env-file .env.base --file docker-compose.yaml down
-```
-
-This stops and removes the containers, but keeps the images.
-
-## Code formatting
-
-We have a pre-commit template to automatically format your code.
-To install pre-commit:
-
-```bash
-pip install pre-commit
-```
-
-Then you can run pre-commit with:
-
-```bash
-pre-commit run --all-files
-```
-
-## Troubleshooting
-
-### Pylance Missing Indexing of Extensions
-
-In some VsCode versions, the indexing of part of the extensions is missing. In this case, add the path to your extension in `.vscode/settings.json` under the key `"python.analysis.extraPaths"`.
-
-```json
-{
-    "python.analysis.extraPaths": [
-        "<path-to-ext-repo>/source/whole_body_tracking"
-    ]
-}
-```
-
-### Pylance Crash
-
-If you encounter a crash in `pylance`, it is probable that too many files are indexed and you run out of memory.
-A possible solution is to exclude some of omniverse packages that are not used in your project.
-To do so, modify `.vscode/settings.json` and comment out packages under the key `"python.analysis.extraPaths"`
-Some examples of packages that can likely be excluded are:
-
-```json
-"<path-to-isaac-sim>/extscache/omni.anim.*"         // Animation packages
-"<path-to-isaac-sim>/extscache/omni.kit.*"          // Kit UI tools
-"<path-to-isaac-sim>/extscache/omni.graph.*"        // Graph UI tools
-"<path-to-isaac-sim>/extscache/omni.services.*"     // Services tools
-...
-```
