@@ -237,14 +237,12 @@ class MotionCommand(CommandTerm):
         robot_anchor_pos_w_repeat = self.robot_anchor_pos_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
         robot_anchor_quat_w_repeat = self.robot_anchor_quat_w[:, None, :].repeat(1, len(self.cfg.body_names), 1)
 
-        delta_pos_w = anchor_pos_w_repeat - robot_anchor_pos_w_repeat
-        delta_pos_w[..., :2] = 0.0
+        delta_pos_w = robot_anchor_pos_w_repeat
+        delta_pos_w[..., 2] = anchor_pos_w_repeat[..., 2]
         delta_ori_w = yaw_quat(quat_mul(robot_anchor_quat_w_repeat, quat_inv(anchor_quat_w_repeat)))
 
         self.body_quat_relative_w = quat_mul(delta_ori_w, self.body_quat_w)
-        self.body_pos_relative_w = (
-            robot_anchor_pos_w_repeat + delta_pos_w + quat_apply(delta_ori_w, self.body_pos_w - anchor_pos_w_repeat)
-        )
+        self.body_pos_relative_w = delta_pos_w + quat_apply(delta_ori_w, self.body_pos_w - anchor_pos_w_repeat)
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
