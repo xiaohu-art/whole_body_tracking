@@ -78,11 +78,9 @@ class MotionCommand(CommandTerm):
         self.body_quat_relative_w[:, :, 0] = 1.0
 
         self.bin_count = int(self.motion.time_step_total // (1 / (env.cfg.decimation * env.cfg.sim.dt))) + 1
-        self.episode_bin_index = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
+        self.current_bin_index = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
         self.bin_failed_count = torch.zeros(self.bin_count, dtype=torch.float, device=self.device)
-        self.bin_episode_count = torch.zeros(self.bin_count, dtype=torch.float, device=self.device)
         self._current_bin_failed = torch.zeros(self.bin_count, dtype=torch.float, device=self.device)
-        self._current_bin_episode_count = torch.zeros(self.bin_count, dtype=torch.float, device=self.device)
         self.kernel = torch.tensor(
             [self.cfg.adaptive_lambda**i for i in range(self.cfg.adaptive_kernel_size)], device=self.device
         )
@@ -208,15 +206,16 @@ class MotionCommand(CommandTerm):
         self.metrics["error_joint_vel"] = torch.norm(self.joint_vel - self.robot_joint_vel, dim=-1)
 
     def _adaptive_sampling(self, env_ids: Sequence[int]):
-        # Update the current bin counts TODO: can this be move to the _update_command()?
         episode_failed = self._env.termination_manager.terminated[env_ids]
-        episode_bin_index = self.episode_bin_index[env_ids]
-        if not torch.all(episode_bin_index == 0):
-            self._current_bin_episode_count[:] = torch.bincount(episode_bin_index, minlength=self.bin_count)
-            self._current_bin_failed[:] = torch.bincount(episode_bin_index[episode_failed], minlength=self.bin_count)
+        if torch.any(episode_failed):
+            fail_bins = self.current_bin_index[env_ids][episode_failed]
+            self._current_bin_failed.zero_()
+            self._current_bin_failed[:] = torch.bincount(fail_bins, minlength=self.bin_count)
+        else:
+            self._current_bin_failed.zero_()
 
         # Sample
-        sampling_probabilities = self.bin_failed_count.float() / (self.bin_episode_count.float() + 1e-6) + 1e-6
+        sampling_probabilities = self.bin_failed_count.float() + 1e-6
         sampling_probabilities = torch.nn.functional.pad(
             sampling_probabilities.unsqueeze(0).unsqueeze(0),
             (0, self.cfg.adaptive_kernel_size - 1),  # Non-causal kernel
@@ -224,12 +223,11 @@ class MotionCommand(CommandTerm):
         )
         sampling_probabilities = torch.nn.functional.conv1d(sampling_probabilities, self.kernel.view(1, 1, -1)).view(-1)
 
-        sampling_probabilities += 0.2
+        sampling_probabilities += 0.01
         sampling_probabilities = sampling_probabilities / sampling_probabilities.sum()
 
         sampled_bins = torch.multinomial(sampling_probabilities, len(env_ids), replacement=True)
 
-        self.episode_bin_index[env_ids] = sampled_bins
         self.time_steps[env_ids] = (
             (sampled_bins + sample_uniform(0.0, 1.0, (len(env_ids),), device=self.device))
             / self.bin_count
@@ -283,6 +281,10 @@ class MotionCommand(CommandTerm):
 
     def _update_command(self):
         self.time_steps += 1
+        self.current_bin_index = torch.clamp(
+            (self.time_steps * self.bin_count) // max(self.motion.time_step_total, 1), 0, self.bin_count - 1
+        )
+
         env_ids = torch.where(self.time_steps >= self.motion.time_step_total)[0]
         self._resample_command(env_ids)
 
@@ -300,7 +302,6 @@ class MotionCommand(CommandTerm):
 
         alpha = 0.001
         self.bin_failed_count = alpha * self._current_bin_failed + (1 - alpha) * self.bin_failed_count
-        self.bin_episode_count = alpha * self._current_bin_episode_count + (1 - alpha) * self.bin_episode_count
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
