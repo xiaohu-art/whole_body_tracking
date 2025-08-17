@@ -78,7 +78,6 @@ class MotionCommand(CommandTerm):
         self.body_quat_relative_w[:, :, 0] = 1.0
 
         self.bin_count = int(self.motion.time_step_total // (1 / (env.cfg.decimation * env.cfg.sim.dt))) + 1
-        self.current_bin_index = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
         self.bin_failed_count = torch.zeros(self.bin_count, dtype=torch.float, device=self.device)
         self._current_bin_failed = torch.zeros(self.bin_count, dtype=torch.float, device=self.device)
         self.kernel = torch.tensor(
@@ -208,14 +207,14 @@ class MotionCommand(CommandTerm):
     def _adaptive_sampling(self, env_ids: Sequence[int]):
         episode_failed = self._env.termination_manager.terminated[env_ids]
         if torch.any(episode_failed):
-            fail_bins = self.current_bin_index[env_ids][episode_failed]
-            self._current_bin_failed.zero_()
+            current_bin_index = torch.clamp(
+                (self.time_steps * self.bin_count) // max(self.motion.time_step_total, 1), 0, self.bin_count - 1
+            )
+            fail_bins = current_bin_index[env_ids][episode_failed]
             self._current_bin_failed[:] = torch.bincount(fail_bins, minlength=self.bin_count)
-        else:
-            self._current_bin_failed.zero_()
 
         # Sample
-        sampling_probabilities = self.bin_failed_count.float() + 1e-6
+        sampling_probabilities = self.bin_failed_count + 1e-6
         sampling_probabilities = torch.nn.functional.pad(
             sampling_probabilities.unsqueeze(0).unsqueeze(0),
             (0, self.cfg.adaptive_kernel_size - 1),  # Non-causal kernel
@@ -281,10 +280,6 @@ class MotionCommand(CommandTerm):
 
     def _update_command(self):
         self.time_steps += 1
-        self.current_bin_index = torch.clamp(
-            (self.time_steps * self.bin_count) // max(self.motion.time_step_total, 1), 0, self.bin_count - 1
-        )
-
         env_ids = torch.where(self.time_steps >= self.motion.time_step_total)[0]
         self._resample_command(env_ids)
 
@@ -300,8 +295,10 @@ class MotionCommand(CommandTerm):
         self.body_quat_relative_w = quat_mul(delta_ori_w, self.body_quat_w)
         self.body_pos_relative_w = delta_pos_w + quat_apply(delta_ori_w, self.body_pos_w - anchor_pos_w_repeat)
 
-        alpha = 0.001
-        self.bin_failed_count = alpha * self._current_bin_failed + (1 - alpha) * self.bin_failed_count
+        self.bin_failed_count = (
+            self.cfg.adaptive_alpha * self._current_bin_failed + (1 - self.cfg.adaptive_alpha) * self.bin_failed_count
+        )
+        self._current_bin_failed.zero_()
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         if debug_vis:
@@ -372,6 +369,7 @@ class MotionCommandCfg(CommandTermCfg):
 
     adaptive_kernel_size: int = 3
     adaptive_lambda: float = 0.8
+    adaptive_alpha: float = 0.001
 
     anchor_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
     anchor_visualizer_cfg.markers["frame"].scale = (0.2, 0.2, 0.2)
