@@ -214,7 +214,7 @@ class MotionCommand(CommandTerm):
             self._current_bin_failed[:] = torch.bincount(fail_bins, minlength=self.bin_count)
 
         # Sample
-        sampling_probabilities = self.bin_failed_count + 1e-6
+        sampling_probabilities = self.bin_failed_count + self.cfg.adaptive_uniform_ratio / float(self.bin_count)
         sampling_probabilities = torch.nn.functional.pad(
             sampling_probabilities.unsqueeze(0).unsqueeze(0),
             (0, self.cfg.adaptive_kernel_size - 1),  # Non-causal kernel
@@ -222,7 +222,6 @@ class MotionCommand(CommandTerm):
         )
         sampling_probabilities = torch.nn.functional.conv1d(sampling_probabilities, self.kernel.view(1, 1, -1)).view(-1)
 
-        sampling_probabilities += 0.01
         sampling_probabilities = sampling_probabilities / sampling_probabilities.sum()
 
         sampled_bins = torch.multinomial(sampling_probabilities, len(env_ids), replacement=True)
@@ -369,6 +368,7 @@ class MotionCommandCfg(CommandTermCfg):
 
     adaptive_kernel_size: int = 3
     adaptive_lambda: float = 0.8
+    adaptive_uniform_ratio: float = 0.1
     adaptive_alpha: float = 0.001
 
     anchor_visualizer_cfg: VisualizationMarkersCfg = FRAME_MARKER_CFG.replace(prim_path="/Visuals/Command/pose")
