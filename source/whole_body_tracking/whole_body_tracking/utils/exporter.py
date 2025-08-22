@@ -96,6 +96,8 @@ def attach_onnx_metadata(env: ManagerBasedRLEnv, run_path: str, path: str, filen
         "command_names": env.command_manager.active_terms,
         "observation_names": env.observation_manager.active_terms["policy"],
         "action_scale": env.action_manager.get_term("joint_pos")._scale[0].cpu().tolist(),
+        "anchor_body_name": env.command_manager.get_term("motion").cfg.anchor_body_name,
+        "body_names": env.command_manager.get_term("motion").cfg.body_names,
     }
 
     model = onnx.load(onnx_path)

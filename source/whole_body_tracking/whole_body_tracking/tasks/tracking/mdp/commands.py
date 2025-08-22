@@ -65,8 +65,8 @@ class MotionCommand(CommandTerm):
         super().__init__(cfg, env)
 
         self.robot: Articulation = env.scene[cfg.asset_name]
-        self.robot_anchor_body_index = self.robot.body_names.index(self.cfg.anchor_body)
-        self.motion_anchor_body_index = self.cfg.body_names.index(self.cfg.anchor_body)
+        self.robot_anchor_body_index = self.robot.body_names.index(self.cfg.anchor_body_name)
+        self.motion_anchor_body_index = self.cfg.body_names.index(self.cfg.anchor_body_name)
         self.body_indexes = torch.tensor(
             self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0], dtype=torch.long, device=self.device
         )
@@ -358,7 +358,7 @@ class MotionCommandCfg(CommandTermCfg):
     asset_name: str = MISSING
 
     motion_file: str = MISSING
-    anchor_body: str = MISSING
+    anchor_body_name: str = MISSING
     body_names: list[str] = MISSING
 
     pose_range: dict[str, tuple[float, float]] = {}
