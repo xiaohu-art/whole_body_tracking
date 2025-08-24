@@ -17,13 +17,11 @@ BeyondMimic is a versatile humanoid control framework that provides highly dynam
 state-of-the-art motion quality on real-world deployment and steerable test-time control with guided diffusion-based
 controllers.
 
-This repo covers the motion tracking training in BeyondMimic. **After adaptive sampling added, you should be able to
+This repo covers the motion tracking training in BeyondMimic. **You should be able to
 train any sim-to-real-ready motion in the LAFAN1 dataset, without tuning any parameters**.
 
-TODO list:
-
-- [ ] Adaptive Sampling: fixing some bugs from numerical issues.
-- [ ] Deployment: will be on another repo.
+For sim-to-sim and sim-to-real deployment, please refer to
+the [motion_tracking_controller](https://github.com/HybridRobotics/motion_tracking_controller).
 
 ## Installation
 
