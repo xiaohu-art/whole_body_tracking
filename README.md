@@ -99,11 +99,8 @@ python scripts/rsl_rl/train.py --task=Tracking-Flat-G1-v0 \
 - Play the trained policy by the following command:
 
 ```bash
-python scripts/rsl_rl/play.py --task=Tracking-Flat-G1-v0 --num_envs=2 --wandb_path={wandb-run-path}
+python scripts/rsl_rl/play.py --task=Tracking-Flat-G1-v0 --num_envs=2 --motion_file LAFAN1/g1/output/dance1_subject1.npz
 ```
-
-The WandB run path can be located in the run overview. It follows the format {your_organization}/{project_name}/ along
-with a unique 8-character identifier. Note that run_name is different from run_path.
 
 ## Code Structure
 
