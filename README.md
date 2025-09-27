@@ -58,10 +58,8 @@ python -m pip install -e source/whole_body_tracking
 
 ## Motion Tracking
 
-### Motion Preprocessing & Registry Setup
+### Motion Preprocessing
 
-In order to manage the large set of motions we used in this work, we leverage the WandB registry to store and load
-reference motions automatically.
 Note: The reference motion should be retargeted and use generalized coordinates only.
 
 - Gather the reference motion datasets (please follow the original licenses), we use the same convention as .csv of
@@ -69,33 +67,22 @@ Note: The reference motion should be retargeted and use generalized coordinates 
 
     - Unitree-retargeted LAFAN1 Dataset is available
       on [HuggingFace](https://huggingface.co/datasets/lvhaidong/LAFAN1_Retargeting_Dataset)
+      ```bash
+      hf download lvhaidong/LAFAN1_Retargeting_Dataset --repo-type dataset --local-dir {local_path}
+      ```
     - Sidekicks are from [KungfuBot](https://kungfu-bot.github.io/)
     - Christiano Ronaldo celebration is from [ASAP](https://github.com/LeCAR-Lab/ASAP).
     - Balance motions are from [HuB](https://hub-robot.github.io/)
-
-
-- Log in to your WandB account; access Registry under Core on the left. Create a new registry collection with the name "
-  Motions" and artifact type "All Types".
-
 
 - Convert retargeted motions to include the maximum coordinates information (body pose, body velocity, and body
   acceleration) via forward kinematics,
 
 ```bash
-python scripts/csv_to_npz.py --input_file {motion_name}.csv --input_fps 30 --output_name {motion_name} --headless
+# example
+python scripts/csv_to_npz.py --input_file LAFAN1/g1/dance1_subject1.csv --input_fps 30 --output_dir LAFAN1/g1/output --output_name dance1_subject1 --headless
+
+python scripts/replay_npz.py --motion_file LAFAN1/g1/output/dance1_subject1.npz
 ```
-
-This will automatically upload the processed motion file to the WandB registry with output name {motion_name}.
-
-- Test if the WandB registry works properly by replaying the motion in Isaac Sim:
-
-```bash
-python scripts/replay_npz.py --registry_name={your-organization}-org/wandb-registry-motions/{motion_name}
-```
-
-- Debugging
-    - Make sure to export WANDB_ENTITY to your organization name, not your personal username.
-    - If /tmp folder is not accessible, modify csv_to_npz.py L319 & L326 to a temporary folder of your choice.
 
 ### Policy Training
 
