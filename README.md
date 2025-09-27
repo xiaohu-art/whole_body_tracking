@@ -90,7 +90,7 @@ python scripts/replay_npz.py --motion_file LAFAN1/g1/output/dance1_subject1.npz
 
 ```bash
 python scripts/rsl_rl/train.py --task=Tracking-Flat-G1-v0 \
---registry_name {your-organization}-org/wandb-registry-motions/{motion_name} \
+--motion_file LAFAN1/g1/output/dance1_subject1.npz \
 --headless --logger wandb --log_project_name {project_name} --run_name {run_name}
 ```
 
