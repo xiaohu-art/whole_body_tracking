@@ -84,6 +84,13 @@ python scripts/csv_to_npz.py --input_file LAFAN1/g1/dance1_subject1.csv --input_
 python scripts/replay_npz.py --motion_file LAFAN1/g1/output/dance1_subject1.npz
 ```
 
+- Convert PHC retargeted `.pkl` motions to `.npz`
+```bash
+python scripts/pkl_to_npz.py --input_file {phc retargeted motion}.pkl --input_fps 30 --output_dir phc-retarget/output --output_name {output_name} --headless
+
+python scripts/replay_npz.py --motion_file phc-retarget/output/{output_name}.npz
+```
+
 ### Policy Training
 
 - Train policy by the following command:
