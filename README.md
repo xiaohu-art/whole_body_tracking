@@ -91,6 +91,16 @@ python scripts/pkl_to_npz.py --input_file {phc retargeted motion}.pkl --input_fp
 python scripts/replay_npz.py --motion_file phc-retarget/output/{output_name}.npz
 ```
 
+- Process multiple motions from a `.pkl` file and save collected simulation data back to the original `.pkl` file
+```bash
+python scripts/pkl_to_pkl.py --input_file motions.pkl --input_fps 30 --output_fps 50 --headless
+
+# Replay specific motion keys from the processed pkl file
+python scripts/replay_pkl.py --input_file motions.pkl --motion_key dance1_subject1
+python scripts/replay_pkl.py --input_file motions.pkl --motion_key dance1_subject1 --loop
+python scripts/replay_pkl.py --input_file motions.pkl --list_motions
+```
+
 ### Policy Training
 
 - Train policy by the following command:
