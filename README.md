@@ -33,10 +33,10 @@ the [motion_tracking_controller](https://github.com/HybridRobotics/motion_tracki
 
 ```bash
 # Option 1: SSH
-git clone git@github.com:HybridRobotics/whole_body_tracking.git
+git clone git@github.com:xiaohu-art/whole_body_tracking.git
 
 # Option 2: HTTPS
-git clone https://github.com/HybridRobotics/whole_body_tracking.git
+git clone https://github.com/xiaohu-art/whole_body_tracking.git
 ```
 
 - Pull the robot description files from GCS

@@ -188,12 +188,15 @@ class MotionLoader:
     def get_next_state(
         self,
     ) -> tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
+        tuple[
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+        ],
+        bool,
     ]:
         """Gets the next state of the motion."""
         state = (
@@ -355,6 +358,6 @@ def main():
 
 if __name__ == "__main__":
     # run the main function
-    main()
+    main()      # type: ignore
     # close sim app
     simulation_app.close()
