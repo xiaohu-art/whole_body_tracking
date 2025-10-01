@@ -327,10 +327,8 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene, joi
         # Process the motion and collect simulation data
         simulation_data = process_single_motion(sim, scene, joint_names, motion_data, motion_key)
         
-        # Combine original motion data with collected simulation data
-        processed_motion = motion_data.copy()
-        processed_motion.update(simulation_data)
-        processed_motions[motion_key] = processed_motion
+        # Replace original motion data with collected simulation data
+        processed_motions[motion_key] = simulation_data
     
     # Save the updated pkl file
     print(f"[INFO]: Saving updated motions to {args_cli.input_file}")
